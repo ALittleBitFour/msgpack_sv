@@ -24,6 +24,7 @@ initial begin
     longint int_value;
     real real_value;
     shortreal shortreal_value;
+    string string_value;
     automatic msgpack_enc enc = new("enc");
     automatic msgpack_dec dec = new("dec");
 
@@ -34,6 +35,8 @@ initial begin
     enc.write_int(52);
     enc.write_real(-1.14);
     enc.write_shortreal(-1.14);
+    // enc.write_string("Holla Comrade!");
+    enc.write_string({100{"a"}});
     dec.set_buffer(enc.buffer);
     check_result(dec.read_bool(bit_value));
     `uvm_info("TOP", $sformatf("%0d", bit_value), UVM_NONE)
@@ -44,9 +47,11 @@ initial begin
     check_result(dec.read_int(int_value));
     `uvm_info("TOP", $sformatf("%0d", int_value), UVM_NONE)
     check_result(dec.read_real(real_value));
-    `uvm_info("TOP", $sformatf("%0f", real_value), UVM_NONE)
+    `uvm_info("TOP", $sformatf("%f", real_value), UVM_NONE)
     check_result(dec.read_shortreal(shortreal_value));
-    `uvm_info("TOP", $sformatf("%0f", shortreal_value), UVM_NONE)
+    `uvm_info("TOP", $sformatf("%f", shortreal_value), UVM_NONE)
+    check_result(dec.read_string(string_value));
+    `uvm_info("TOP", $sformatf("%s", string_value), UVM_NONE)
 end
 
 endmodule

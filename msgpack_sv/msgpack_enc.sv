@@ -11,6 +11,7 @@ class msgpack_enc extends uvm_object;
     extern function void write_uint(longint unsigned value);
     extern function void write_real(real value);
     extern function void write_shortreal(shortreal value);
+    extern function void write_string(string value);
 
     extern protected function void write(byte unsigned symbol);
     extern protected function void write_and_shift(longint unsigned value, byte unsigned valid_byte);
@@ -96,4 +97,30 @@ endfunction
 function void msgpack_enc::write_shortreal(shortreal value);
     write(MPACK_FLOAT32);
     write_and_shift($shortrealtobits(value), 4);
+endfunction
+
+function void msgpack_enc::write_string(string value);
+    int unsigned str_size = value.len();
+    if(str_size < 32) begin
+        write(MPACK_FIXSTR | str_size);
+    end
+    else if(str_size <= 32'h0000_00ff) begin
+        write(MPACK_STR8);
+        write(str_size);
+    end
+    else if(str_size <= 32'h0000_ffff) begin
+        write(MPACK_STR16 | str_size);
+        write_and_shift(str_size, 2);
+    end
+    else if(str_size <= 32'hffff_ffff) begin
+        write(MPACK_STR32);
+        write_and_shift(str_size, 4);
+    end
+    else begin
+        `uvm_fatal(get_name(), "Realy?! String is bigger than (2^32)-1 bytes")
+        return;
+    end
+    foreach(value[i]) begin
+        write(value[i]);
+    end
 endfunction
