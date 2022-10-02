@@ -9,6 +9,8 @@ class msgpack_enc extends uvm_object;
     extern function void write_bool(bit value);
     extern function void write_int(longint value);
     extern function void write_uint(longint unsigned value);
+    extern function void write_real(real value);
+    extern function void write_shortreal(shortreal value);
 
     extern protected function void write(byte unsigned symbol);
     extern protected function void write_and_shift(longint unsigned value, byte unsigned valid_byte);
@@ -84,4 +86,14 @@ function void msgpack_enc::write_uint(longint unsigned value);
         write(MPACK_UINT64);
         write_and_shift(value, 8);
     end
+endfunction
+
+function void msgpack_enc::write_real(real value);
+    write(MPACK_FLOAT64);
+    write_and_shift($realtobits(value), 8);
+endfunction
+
+function void msgpack_enc::write_shortreal(shortreal value);
+    write(MPACK_FLOAT32);
+    write_and_shift($shortrealtobits(value), 4);
 endfunction

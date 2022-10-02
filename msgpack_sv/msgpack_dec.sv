@@ -11,6 +11,8 @@ class msgpack_dec extends uvm_object;
     extern function msgpack_result_t read_bool(ref bit value);
     extern function msgpack_result_t read_int(ref longint value);
     extern function msgpack_result_t read_uint(ref longint unsigned value);
+    extern function msgpack_result_t read_real(ref real value);
+    extern function msgpack_result_t read_shortreal(ref shortreal value);
 
     extern protected function msgpack_result_t read(ref byte unsigned value);
     extern protected function msgpack_result_t read_and_shift_uint(ref longint unsigned value, 
@@ -163,4 +165,32 @@ function msgpack_result_t msgpack_dec::read_int(ref longint value);
     else begin
         return MPACK_WRONG_TYPE;
     end    
+endfunction
+
+function msgpack_result_t msgpack_dec::read_real(ref real value);
+    byte unsigned symbol;
+    longint unsigned uint_value;
+    read_real = read(symbol);
+    if(read_real != MPACK_OK) begin
+        return read_real;
+    end
+    if(symbol != MPACK_FLOAT64) begin
+        return MPACK_WRONG_TYPE;
+    end
+    read_real = read_and_shift_uint(uint_value, 8);
+    value = $bitstoreal(uint_value);
+endfunction
+
+function msgpack_result_t msgpack_dec::read_shortreal(ref shortreal value);
+    byte unsigned symbol;
+    longint unsigned uint_value;
+    read_shortreal = read(symbol);
+    if(read_shortreal != MPACK_OK) begin
+        return read_shortreal;
+    end
+    if(symbol != MPACK_FLOAT32) begin
+        return MPACK_WRONG_TYPE;
+    end
+    read_shortreal = read_and_shift_uint(uint_value, 4);
+    value = $bitstoshortreal(uint_value);
 endfunction
