@@ -14,6 +14,7 @@ class msgpack_dec extends uvm_object;
     extern function msgpack_result_t read_real(ref real value);
     extern function msgpack_result_t read_shortreal(ref shortreal value);
     extern function msgpack_result_t read_string(ref string value);
+    extern function msgpack_result_t read_bin(ref byte unsigned value[]);
 
     extern protected function msgpack_result_t read(ref byte unsigned value);
     extern protected function msgpack_result_t read_and_shift_uint(ref longint unsigned value, 
@@ -221,6 +222,32 @@ function msgpack_result_t msgpack_dec::read_string(ref string value);
     for(longint unsigned i = 0; i < str_size; i++) begin
         read_string = read(symbol);
         if(read_string != MPACK_OK) return read_string;
+        value = {value, symbol};
+    end
+endfunction
+
+function msgpack_result_t msgpack_dec::read_bin(ref byte unsigned value[]);
+    byte unsigned symbol;
+    longint unsigned bin_size;
+    read_bin = read(symbol);
+    if(read_bin != MPACK_OK) begin
+        return read_bin;
+    end
+    if(symbol == MPACK_BIN8) begin
+        read_bin = read_and_shift_uint(bin_size, 1);
+    end
+    else if(symbol == MPACK_BIN16) begin
+        read_bin = read_and_shift_uint(bin_size, 2);
+    end
+    else if(symbol == MPACK_BIN32) begin
+        read_bin = read_and_shift_uint(bin_size, 4);
+    end
+    else begin
+        return MPACK_WRONG_TYPE;
+    end
+    for(longint unsigned i = 0; i < bin_size; i++) begin
+        read_bin = read(symbol);
+        if(read_bin != MPACK_OK) return read_bin;
         value = {value, symbol};
     end
 endfunction

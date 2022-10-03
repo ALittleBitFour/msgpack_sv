@@ -12,6 +12,8 @@ class msgpack_enc extends uvm_object;
     extern function void write_real(real value);
     extern function void write_shortreal(shortreal value);
     extern function void write_string(string value);
+    extern function void write_bin(byte unsigned value[]);
+    extern function void write_array(int unsigned size);
 
     extern protected function void write(byte unsigned symbol);
     extern protected function void write_and_shift(longint unsigned value, byte unsigned valid_byte);
@@ -109,7 +111,7 @@ function void msgpack_enc::write_string(string value);
         write(str_size);
     end
     else if(str_size <= 32'h0000_ffff) begin
-        write(MPACK_STR16 | str_size);
+        write(MPACK_STR16);
         write_and_shift(str_size, 2);
     end
     else if(str_size <= 32'hffff_ffff) begin
@@ -123,4 +125,31 @@ function void msgpack_enc::write_string(string value);
     foreach(value[i]) begin
         write(value[i]);
     end
+endfunction
+
+function void msgpack_enc::write_bin(byte unsigned value[]);
+    int unsigned bin_size = $size(value);
+    if(bin_size <= 32'h0000_00ff) begin
+        write(MPACK_BIN8);
+        write(bin_size);
+    end
+    else if(bin_size <= 32'h0000_ffff) begin
+        write(MPACK_BIN16);
+        write_and_shift(bin_size, 2);
+    end
+    else if(bin_size <= 32'hffff_ffff) begin
+        write(MPACK_BIN32);
+        write_and_shift(bin_size, 4);
+    end
+    else begin
+        `uvm_fatal(get_name(), "Binary data is bigger than (2^32)-1 bytes")
+        return;
+    end
+    foreach(value[i]) begin
+        write(value[i]);
+    end
+endfunction
+
+function void msgpack_enc::write_array(int unsigned size);
+
 endfunction
