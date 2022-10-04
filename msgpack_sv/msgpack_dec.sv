@@ -1,7 +1,7 @@
 class msgpack_dec extends uvm_object;
     struct {int unsigned offset;} state;
 
-    protected byte unsigned buffer[$];
+    protected mpack_buffer buffer;
 
     extern function new(string name = "msgpack_dec");
 
@@ -15,6 +15,7 @@ class msgpack_dec extends uvm_object;
     extern function msgpack_result_t read_shortreal(ref shortreal value);
     extern function msgpack_result_t read_string(ref string value);
     extern function msgpack_result_t read_bin(ref byte unsigned value[]);
+    extern function msgpack_result_t read_array(ref int unsigned size);
 
     extern protected function msgpack_result_t read(ref byte unsigned value);
     extern protected function msgpack_result_t read_and_shift_uint(ref longint unsigned value, 
@@ -118,12 +119,12 @@ function msgpack_result_t msgpack_dec::read_uint(ref longint unsigned value);
         return read_uint;
     end
     else if(~symbol & 8'h80) begin
-        value = mpack_uint'(symbol);
+        value = mpack_uint32'(symbol);
         return MPACK_OK;
     end
     else if(symbol == MPACK_UINT8) begin
         read_uint = read(symbol);
-        value = mpack_uint'(symbol);
+        value = mpack_uint32'(symbol);
     end
     else if(symbol == MPACK_UINT16) begin
         return read_and_shift_uint(value, 2);
@@ -135,7 +136,7 @@ function msgpack_result_t msgpack_dec::read_uint(ref longint unsigned value);
         return read_and_shift_uint(value, 8);
     end
     else begin
-        value = mpack_uint'(symbol);
+        value = mpack_uint32'(symbol);
         return MPACK_WRONG_TYPE;
     end    
 endfunction
@@ -249,5 +250,28 @@ function msgpack_result_t msgpack_dec::read_bin(ref byte unsigned value[]);
         read_bin = read(symbol);
         if(read_bin != MPACK_OK) return read_bin;
         value = {value, symbol};
+    end
+endfunction
+
+function msgpack_result_t msgpack_dec::read_array(ref int unsigned size);
+    byte unsigned symbol;
+    longint unsigned uint_size;
+    read_array = read(symbol);
+    if(read_array != MPACK_OK) begin
+        return read_array;
+    end
+    if((symbol & MPACK_FIXARRAY) == MPACK_FIXARRAY) begin
+        size = symbol & ~MPACK_FIXARRAY;
+    end
+    else if(symbol == MPACK_ARRAY16) begin
+        read_array = read_and_shift_uint(uint_size, 2);
+        size = mpack_uint32'(uint_size);
+    end
+    else if(symbol == MPACK_ARRAY32) begin
+        read_array = read_and_shift_uint(uint_size, 4);
+        size = mpack_uint32'(uint_size);
+    end
+    else begin
+        return MPACK_WRONG_TYPE;
     end
 endfunction

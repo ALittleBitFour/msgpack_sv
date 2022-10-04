@@ -43,4 +43,6 @@ typedef enum int {
     MPACK_WRONG_TYPE
 } msgpack_result_t;
 
-typedef longint unsigned mpack_uint;
+typedef int unsigned mpack_uint32;
+typedef longint unsigned mpack_uint64;
+typedef byte unsigned mpack_buffer[$];
