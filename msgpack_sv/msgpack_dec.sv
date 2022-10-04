@@ -16,6 +16,7 @@ class msgpack_dec extends uvm_object;
     extern function msgpack_result_t read_string(ref string value);
     extern function msgpack_result_t read_bin(ref byte unsigned value[]);
     extern function msgpack_result_t read_array(ref int unsigned size);
+    extern function msgpack_result_t read_map(ref int unsigned size);
 
     extern protected function msgpack_result_t read(ref byte unsigned value);
     extern protected function msgpack_result_t read_and_shift_uint(ref longint unsigned value, 
@@ -205,7 +206,7 @@ function msgpack_result_t msgpack_dec::read_string(ref string value);
     if(read_string != MPACK_OK) begin
         return read_string;
     end
-    if((symbol & MPACK_FIXSTR) == MPACK_FIXSTR) begin
+    if((symbol & 8'hf0) == MPACK_FIXSTR) begin
         str_size = symbol & ~MPACK_FIXSTR;
     end
     else if(symbol == MPACK_STR8) begin
@@ -260,7 +261,7 @@ function msgpack_result_t msgpack_dec::read_array(ref int unsigned size);
     if(read_array != MPACK_OK) begin
         return read_array;
     end
-    if((symbol & MPACK_FIXARRAY) == MPACK_FIXARRAY) begin
+    if((symbol & 8'hf0) == MPACK_FIXARRAY) begin
         size = symbol & ~MPACK_FIXARRAY;
     end
     else if(symbol == MPACK_ARRAY16) begin
@@ -269,6 +270,29 @@ function msgpack_result_t msgpack_dec::read_array(ref int unsigned size);
     end
     else if(symbol == MPACK_ARRAY32) begin
         read_array = read_and_shift_uint(uint_size, 4);
+        size = mpack_uint32'(uint_size);
+    end
+    else begin
+        return MPACK_WRONG_TYPE;
+    end
+endfunction
+
+function msgpack_result_t msgpack_dec::read_map(ref int unsigned size);
+    byte unsigned symbol;
+    longint unsigned uint_size;
+    read_map = read(symbol);
+    if(read_map != MPACK_OK) begin
+        return read_map;
+    end
+    if((symbol & 8'hf0) == MPACK_FIXMAP) begin
+        size = symbol & ~MPACK_FIXMAP;
+    end
+    else if(symbol == MPACK_MAP16) begin
+        read_map = read_and_shift_uint(uint_size, 2);
+        size = mpack_uint32'(uint_size);
+    end
+    else if(symbol == MPACK_MAP32) begin
+        read_map = read_and_shift_uint(uint_size, 4);
         size = mpack_uint32'(uint_size);
     end
     else begin

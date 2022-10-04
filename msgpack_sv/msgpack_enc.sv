@@ -21,15 +21,23 @@ class msgpack_enc extends uvm_object;
     extern function void write_string(string value);
     extern function void write_bin(byte unsigned value[]);
     extern function void write_array(int unsigned size);
+    extern function void write_map(int unsigned size);
     
     `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     extern function void write_array_begin();
     extern function void write_array_end();
+    extern function void write_map_begin();
+    extern function void write_map_end();
     `endif
 
     extern protected function void write(byte unsigned symbol);
     extern protected function void write_type(byte unsigned symbol);
     extern protected function void write_and_shift(longint unsigned value, byte unsigned valid_byte);
+    extern protected function void write_collection(int unsigned size, bit is_map);
+    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    extern protected function void write_collection_begin();
+    extern protected function void write_collection_end(bit is_map);
+    `endif
 
     `uvm_object_utils(msgpack_enc)
 endclass
@@ -193,40 +201,66 @@ function void msgpack_enc::write_bin(byte unsigned value[]);
     end
 endfunction
 
-function void msgpack_enc::write_array(int unsigned size);
+function void msgpack_enc::write_collection(int unsigned size, bit is_map);
+    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    current_elem_size[current_buffer] -= size << is_map;
+    `endif
     if(size <= 15) begin
-        write_type(MPACK_FIXARRAY | size);
+        write_type((MPACK_FIXARRAY | size) & ~(is_map << 4));
     end 
     else if(size <= 32'h0000_ffff) begin
-        write_type(MPACK_ARRAY16);
+        write_type(MPACK_ARRAY16 | is_map << 1);
         write_and_shift(size, 2);
     end 
     else if(size <= 32'hffff_ffff) begin
-        write_type(MPACK_ARRAY32);
+        write_type(MPACK_ARRAY32 | is_map << 1);
         write_and_shift(size, 4);
     end
     else begin
         `uvm_fatal(get_name(), "Array is bigger than (2^32)-1 bytes")
         return;
     end
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
-    current_elem_size[current_buffer] -= size;
-    `endif
+endfunction
+
+function void msgpack_enc::write_array(int unsigned size);
+    write_collection(size, 0);
+endfunction
+
+function void msgpack_enc::write_map(int unsigned size);
+    write_collection(size, 1);
 endfunction
 
 `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
-function void msgpack_enc::write_array_begin();
+function void msgpack_enc::write_collection_begin();
     buffer.push_back({});
     current_elem_size[current_buffer]++;
     current_elem_size.push_back(0);
     current_buffer++;
 endfunction
 
-function void msgpack_enc::write_array_end();
+function void msgpack_enc::write_collection_end(bit is_map);
     longint elem_size = current_elem_size.pop_back();
     current_buffer--;
-    write_array(elem_size);
+    write_collection(elem_size, is_map);
     buffer[current_buffer] = {buffer[current_buffer], buffer.pop_back()};
     current_elem_size[current_buffer] += elem_size; // hack, fix it later
 endfunction
+
+function void msgpack_enc::write_array_begin();
+    write_collection_begin();
+endfunction
+
+function void msgpack_enc::write_array_end();
+    write_collection_end(0);
+endfunction
+
+function void msgpack_enc::write_map_begin();
+    write_collection_begin();
+endfunction
+
+function void msgpack_enc::write_map_end();
+    current_elem_size[current_buffer] >>= 1;
+    write_collection_end(1);
+endfunction
+
 `endif
