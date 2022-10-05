@@ -7,13 +7,13 @@ import msgpack_pkg::*;
 
 function void check_result(msgpack_result_t result);
     case(result)
-        MPACK_OK: begin
+        MSGPACK_OK: begin
             `uvm_info("TOP", "Fine", UVM_DEBUG)
         end
-        MPACK_OOB: begin
+        MSGPACK_OOB: begin
             `uvm_info("TOP", "OOB", UVM_DEBUG)
         end
-        MPACK_WRONG_TYPE: begin
+        MSGPACK_WRONG_TYPE: begin
             `uvm_info("TOP", "Wrong type", UVM_DEBUG)
         end
     endcase
@@ -37,7 +37,7 @@ initial begin
     automatic msgpack_enc enc = new("enc");
     automatic msgpack_dec dec = new("dec");
 
-    enc.write_map_begin();
+    enc.write_map(1);
     enc.write_array(6);
     enc.write_bool(1'b1);
     enc.write_bool(1'b0);
@@ -55,10 +55,9 @@ initial begin
     // enc.write_string({1<<16{"c"}});
     // enc.write_bin(bin_data);
     enc.write_array_end();
-    enc.write_map_end();
 
     begin
-        automatic mpack_buffer buffer = enc.get_buffer();
+        automatic msgpack_buffer buffer = enc.get_buffer();
         automatic string str;
         foreach(buffer[i]) begin
             str = $sformatf("%s %h", str, buffer[i]);
@@ -67,19 +66,19 @@ initial begin
     end
 
     dec.set_buffer(enc.get_buffer());
-    `check_decoding(mpack_uint32, dec.read_map, 1, %0d);
-    `check_decoding(mpack_uint32, dec.read_array, 6, %0d);
+    `check_decoding(msgpack_uint32, dec.read_map, 1, %0d);
+    `check_decoding(msgpack_uint32, dec.read_array, 6, %0d);
     `check_decoding(bit, dec.read_bool, 1'b1, %0d);
     `check_decoding(bit, dec.read_bool, 1'b0, %0d);
     `check_decoding(longint, dec.read_int, -100, %0d);
     `check_decoding(longint, dec.read_int, 52, %0d);
     `check_decoding(real, dec.read_real, -1.14, %f);
     `check_decoding(shortreal, dec.read_shortreal, -1.15, %f); // It seems that Questa use real instead of shortreal, so we have an error if use $shortrealtobits
-    `check_decoding(mpack_uint32, dec.read_map, 2, %0d);
+    `check_decoding(msgpack_uint32, dec.read_map, 2, %0d);
     `check_decoding(string, dec.read_string, "Hola Comrade!", %s);
     `check_decoding(longint, dec.read_int, 1000, %d);
     `check_decoding(string, dec.read_string, "Hello", %s);
-    `check_decoding(mpack_uint32, dec.read_array, 1, %0d);
+    `check_decoding(msgpack_uint32, dec.read_array, 1, %0d);
     `check_decoding(string, dec.read_string, {100{"a"}}, %s);
     // `check_decoding(string, dec.read_string, {1<<8{"b"}}, %s);
     // `check_decoding(string, dec.read_string, {1<<16{"c"}}, %s);

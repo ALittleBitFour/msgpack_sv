@@ -1,16 +1,19 @@
+`ifndef MSGPACK_ENC__SV
+`define MSGPACK_ENC__SV
+
 // Class: msgpack_enc
 class msgpack_enc extends uvm_object;
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
-    protected mpack_buffer buffer[$];
-    protected mpack_uint32 current_buffer;
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    protected msgpack_buffer buffer[$];
+    protected msgpack_uint32 current_buffer;
     protected longint current_elem_size[$];
     `else
-    protected mpack_buffer buffer;
+    protected msgpack_buffer buffer;
     `endif
 
     extern function new(string name = "msgpack_enc");
 
-    extern function mpack_buffer get_buffer();
+    extern function msgpack_buffer get_buffer();
 
     extern function void write_nil();
     extern function void write_bool(bit value);
@@ -23,7 +26,7 @@ class msgpack_enc extends uvm_object;
     extern function void write_array(int unsigned size);
     extern function void write_map(int unsigned size);
     
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     extern function void write_array_begin();
     extern function void write_array_end();
     extern function void write_map_begin();
@@ -34,7 +37,7 @@ class msgpack_enc extends uvm_object;
     extern protected function void write_type(byte unsigned symbol);
     extern protected function void write_and_shift(longint unsigned value, byte unsigned valid_byte);
     extern protected function void write_collection(int unsigned size, bit is_map);
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     extern protected function void write_collection_begin();
     extern protected function void write_collection_end(bit is_map);
     `endif
@@ -44,15 +47,15 @@ endclass
 
 function msgpack_enc::new(string name = "msgpack_enc");
     super.new(name);
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     buffer.push_back({});
     current_buffer = 0;
     current_elem_size.push_back(0);
     `endif
 endfunction
 
-function mpack_buffer msgpack_enc::get_buffer();
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+function msgpack_buffer msgpack_enc::get_buffer();
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     return buffer[0];
     `else
     return buffer;
@@ -60,7 +63,7 @@ function mpack_buffer msgpack_enc::get_buffer();
 endfunction
 
 function void msgpack_enc::write(byte unsigned symbol);
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     buffer[current_buffer].push_back(symbol);
     `else
     buffer.push_back(symbol);
@@ -68,7 +71,7 @@ function void msgpack_enc::write(byte unsigned symbol);
 endfunction
 
 function void msgpack_enc::write_type(byte unsigned symbol);
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     buffer[current_buffer].push_back(symbol);
     current_elem_size[current_buffer]++;
     `else
@@ -78,7 +81,7 @@ endfunction
 
 function void msgpack_enc::write_and_shift(longint unsigned value, byte unsigned valid_byte);
     for(byte unsigned i = 0; i < valid_byte; i++) begin
-        `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+        `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
         buffer[current_buffer].push_back(value >> ((valid_byte - 1) - i)*8);
         `else
         buffer.push_back(value >> ((valid_byte - 1) - i)*8);
@@ -87,12 +90,12 @@ function void msgpack_enc::write_and_shift(longint unsigned value, byte unsigned
 endfunction
 
 function void msgpack_enc::write_nil();
-    write_type(MPACK_NIL);
+    write_type(MSGPACK_NIL);
 endfunction
 
 function void msgpack_enc::write_bool(bit value);
-    if(value) write_type(MPACK_TRUE);
-    else write_type(MPACK_FALSE);
+    if(value) write_type(MSGPACK_TRUE);
+    else write_type(MSGPACK_FALSE);
 endfunction
 
 function void msgpack_enc::write_int(longint value);
@@ -100,73 +103,73 @@ function void msgpack_enc::write_int(longint value);
         write_uint(value);
     end
     else if(value >= -32) begin
-        write_type(MPACK_NEGATIVE_FIXINT | value);
+        write_type(MSGPACK_NEGATIVE_FIXINT | value);
     end
     else if(value >= -128) begin
-        write_type(MPACK_INT8);
+        write_type(MSGPACK_INT8);
         write(value);
     end
     else if(value >= -32768) begin
-        write_type(MPACK_INT16);
+        write_type(MSGPACK_INT16);
         write_and_shift(value, 2);
     end
     else if(value >= (-2147483647 - 1)) begin
-        write_type(MPACK_INT32);
+        write_type(MSGPACK_INT32);
         write_and_shift(value, 4);
     end
     else begin
-        write_type(MPACK_INT64);
+        write_type(MSGPACK_INT64);
         write_and_shift(value, 8);
     end
 endfunction
 
 function void msgpack_enc::write_uint(longint unsigned value);
     if(value <= 7'h7f) begin
-        write_type(MPACK_POSITIVE_FIXINT | value);
+        write_type(MSGPACK_POSITIVE_FIXINT | value);
     end
     else if(value <= 8'hff) begin
-        write_type(MPACK_UINT8);
+        write_type(MSGPACK_UINT8);
         write(value);
     end
     else if(value <= 16'hffff) begin
-        write_type(MPACK_UINT16);
+        write_type(MSGPACK_UINT16);
         write_and_shift(value, 2);
     end
     else if(value <= 32'hffff_ffff) begin
-        write_type(MPACK_UINT32);
+        write_type(MSGPACK_UINT32);
         write_and_shift(value, 4);
     end
     else begin
-        write_type(MPACK_UINT64);
+        write_type(MSGPACK_UINT64);
         write_and_shift(value, 8);
     end
 endfunction
 
 function void msgpack_enc::write_real(real value);
-    write_type(MPACK_FLOAT64);
+    write_type(MSGPACK_FLOAT64);
     write_and_shift($realtobits(value), 8);
 endfunction
 
 function void msgpack_enc::write_shortreal(shortreal value);
-    write(MPACK_FLOAT32);
+    write(MSGPACK_FLOAT32);
     write_and_shift($shortrealtobits(value), 4);
 endfunction
 
 function void msgpack_enc::write_string(string value);
     int unsigned str_size = value.len();
     if(str_size < 32) begin
-        write_type(MPACK_FIXSTR | str_size);
+        write_type(MSGPACK_FIXSTR | str_size);
     end
     else if(str_size <= 32'h0000_00ff) begin
-        write_type(MPACK_STR8);
+        write_type(MSGPACK_STR8);
         write(str_size);
     end
     else if(str_size <= 32'h0000_ffff) begin
-        write_type(MPACK_STR16);
+        write_type(MSGPACK_STR16);
         write_and_shift(str_size, 2);
     end
     else if(str_size <= 32'hffff_ffff) begin
-        write_type(MPACK_STR32);
+        write_type(MSGPACK_STR32);
         write_and_shift(str_size, 4);
     end
     else begin
@@ -181,15 +184,15 @@ endfunction
 function void msgpack_enc::write_bin(byte unsigned value[]);
     int unsigned bin_size = $size(value);
     if(bin_size <= 32'h0000_00ff) begin
-        write_type(MPACK_BIN8);
+        write_type(MSGPACK_BIN8);
         write(bin_size);
     end
     else if(bin_size <= 32'h0000_ffff) begin
-        write_type(MPACK_BIN16);
+        write_type(MSGPACK_BIN16);
         write_and_shift(bin_size, 2);
     end
     else if(bin_size <= 32'hffff_ffff) begin
-        write_type(MPACK_BIN32);
+        write_type(MSGPACK_BIN32);
         write_and_shift(bin_size, 4);
     end
     else begin
@@ -202,18 +205,18 @@ function void msgpack_enc::write_bin(byte unsigned value[]);
 endfunction
 
 function void msgpack_enc::write_collection(int unsigned size, bit is_map);
-    `ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     current_elem_size[current_buffer] -= size << is_map;
     `endif
     if(size <= 15) begin
-        write_type((MPACK_FIXARRAY | size) & ~(is_map << 4));
+        write_type((MSGPACK_FIXARRAY | size) & ~(is_map << 4));
     end 
     else if(size <= 32'h0000_ffff) begin
-        write_type(MPACK_ARRAY16 | is_map << 1);
+        write_type(MSGPACK_ARRAY16 | is_map << 1);
         write_and_shift(size, 2);
     end 
     else if(size <= 32'hffff_ffff) begin
-        write_type(MPACK_ARRAY32 | is_map << 1);
+        write_type(MSGPACK_ARRAY32 | is_map << 1);
         write_and_shift(size, 4);
     end
     else begin
@@ -230,7 +233,7 @@ function void msgpack_enc::write_map(int unsigned size);
     write_collection(size, 1);
 endfunction
 
-`ifndef MPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+`ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
 function void msgpack_enc::write_collection_begin();
     buffer.push_back({});
     current_elem_size[current_buffer]++;
@@ -262,5 +265,7 @@ function void msgpack_enc::write_map_end();
     current_elem_size[current_buffer] >>= 1;
     write_collection_end(1);
 endfunction
+
+`endif
 
 `endif
