@@ -21,8 +21,8 @@ endfunction
 
 `define check_decoding(VAL, FUNC, EXP, FORMAT) \
 begin\
-automatic VAL act_value;\
-check_result(FUNC(act_value));\
+automatic VAL act_value = FUNC();\
+check_result(dec.last_result);\
 if(act_value != VAL'(EXP)) begin\
     automatic string format_str = `"FORMAT`"; \
     automatic string type_str = `"VAL`"; \

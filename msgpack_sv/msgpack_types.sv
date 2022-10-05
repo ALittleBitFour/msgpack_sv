@@ -46,3 +46,4 @@ typedef enum int {
 typedef int unsigned mpack_uint32;
 typedef longint unsigned mpack_uint64;
 typedef byte unsigned mpack_buffer[$];
+typedef byte unsigned mpack_bin[];
