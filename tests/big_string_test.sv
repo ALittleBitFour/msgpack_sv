@@ -3,7 +3,7 @@
 
 class big_string_test extends base_test;
 
-    function new(string name = "base_test", uvm_component parent);
+    function new(string name = "big_string_test", uvm_component parent);
         super.new(name, parent);
     endfunction
 

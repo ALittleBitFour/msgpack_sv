@@ -37,6 +37,18 @@ typedef enum byte unsigned {
     MSGPACK_NEGATIVE_FIXINT = 8'he0
 } msgpack_formats_t;
 
+typedef enum {
+    MSGPACK_NODE_INT,
+    MSGPACK_NODE_UINT,
+    MSGPACK_NODE_REAL,
+    MSGPACK_NODE_STRING,
+    MSGPACK_NODE_BOOL,
+    MSGPACK_NODE_ARRAY,
+    MSGPACK_NODE_MAP,
+    MSGPACK_NODE_BIN,
+    MSGPACK_NODE_EXT
+} msgpack_node_t;
+
 typedef enum int {
     MSGPACK_OK,
     MSGPACK_OOB,

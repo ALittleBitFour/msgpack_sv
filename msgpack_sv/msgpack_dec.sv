@@ -18,10 +18,11 @@ class msgpack_dec extends uvm_object;
     extern function real             read_real();
     extern function shortreal        read_shortreal();
     extern function string           read_string();
-    extern function msgpack_bin        read_bin();
+    extern function msgpack_bin      read_bin();
     extern function int unsigned     read_array();
     extern function int unsigned     read_map();
 
+    extern function bit peek(ref byte unsigned symbol);
     extern protected function byte unsigned    read();
     extern protected function longint unsigned read_and_shift_uint(byte unsigned valid_byte);
     extern protected function longint          read_and_shift_int(byte unsigned valid_byte);
@@ -36,6 +37,12 @@ endfunction
 
 function void msgpack_dec::set_buffer(byte unsigned buffer[$]);
     this.buffer = buffer;
+endfunction
+
+function bit msgpack_dec::peek(ref byte unsigned symbol);
+    if(state.offset >= buffer.size()) return 0;
+    symbol = buffer[state.offset];
+    return 1;
 endfunction
 
 function byte unsigned msgpack_dec::read();

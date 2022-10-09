@@ -7,6 +7,8 @@ package msgpack_pkg;
     `include "msgpack_types.sv"
     `include "msgpack_enc.sv"
     `include "msgpack_dec.sv"
+    `include "msgpack_node.sv"
+    `include "msgpack_tree.sv"
 endpackage
 
 `endif
