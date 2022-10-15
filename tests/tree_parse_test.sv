@@ -3,6 +3,7 @@
 
 class tree_parse_test extends base_test;
     msgpack_tree tree;
+    msgpack_map_node map;
 
     function new(string name = "tree_parse_test", uvm_component parent);
         super.new(name, parent);
@@ -10,6 +11,7 @@ class tree_parse_test extends base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
+
         enc.write_map(1);
         enc.write_array(6);
         enc.write_bool(1'b1);
@@ -23,10 +25,14 @@ class tree_parse_test extends base_test;
         enc.write_int(1000);
         enc.write_string("Hello");
         enc.write_array_begin();
-        enc.write_string({100{"a"}});
+        enc.write_string({10{"a"}});
         enc.write_array_end();
 
         tree.build(enc.get_buffer());
+
+        if(!$cast(map, tree._root)) `uvm_fatal(get_name(), "First node in tree isn't a map")
+        map.add_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
+        map.add_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
 
         `uvm_info(get_name(), tree._root.sprint(), UVM_NONE)
     endtask
