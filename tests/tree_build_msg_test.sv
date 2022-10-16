@@ -1,11 +1,11 @@
-`ifndef TREE_PARSE_TEST__SV
-`define TREE_PARSE_TEST__SV
+`ifndef TREE_BUILD_MSG_TEST__SV
+`define TREE_BUILD_MSG_TEST__SV
 
-class tree_parse_test extends base_test;
+class tree_build_msg_test extends base_test;
     msgpack_tree tree;
     msgpack_map_node map;
 
-    function new(string name = "tree_parse_test", uvm_component parent);
+    function new(string name = "tree_build_msg_test", uvm_component parent);
         super.new(name, parent);
         tree = new("tree");
     endfunction
@@ -34,10 +34,12 @@ class tree_parse_test extends base_test;
         map.add_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
         map.add_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
 
-        `uvm_info(get_name(), tree._root.sprint(), UVM_NONE)
+        tree.build_msg();
+
+        print_buffer(tree.enc);
     endtask
 
-    `uvm_component_utils(tree_parse_test)
+    `uvm_component_utils(tree_build_msg_test)
 endclass
 
 `endif

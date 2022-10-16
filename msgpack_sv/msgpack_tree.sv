@@ -2,14 +2,17 @@
 `define MSGPACK_TREE__SV
 
 class msgpack_tree extends uvm_object;
-    msgpack_node_base _root;
+    msgpack_collection_node _root;
     protected msgpack_dec dec;
+    msgpack_enc enc;
 
     extern function new(string name = "msgpack_node");
-    extern function void build(msgpack_buffer buffer);
+    extern function void build_tree(msgpack_buffer buffer);
+    extern function void build_msg();
 
-    extern protected function void parse(msgpack_node_base root, int unsigned size);
-    extern protected function void set_node_info(msgpack_node_base node, msgpack_node_base root);
+    extern protected function void parse(msgpack_collection_node root, int unsigned size);
+    extern protected function void parse_tree(msgpack_collection_node root);
+    extern protected function void set_node_info(msgpack_node_base node, msgpack_collection_node root);
 
     `uvm_object_utils(msgpack_tree)
 endclass
@@ -18,16 +21,18 @@ function msgpack_tree::new(string name = "msgpack_node");
     super.new(name);
 endfunction
 
-function void msgpack_tree::build(msgpack_buffer buffer);
+function void msgpack_tree::build_tree(msgpack_buffer buffer);
     dec = msgpack_dec::type_id::create("dec");
     dec.set_buffer(buffer);
     _root = msgpack_array_node::new("root");
     parse(_root, -1);
-    _root = _root.children[0];
+    if(!$cast(_root, _root.children[0])) begin
+        `uvm_fatal(get_name(), "First element must be a collection")
+    end
     _root.parent = null;
 endfunction
 
-function void msgpack_tree::parse(msgpack_node_base root, int unsigned size);
+function void msgpack_tree::parse(msgpack_collection_node root, int unsigned size);
     byte unsigned symbol;
     for(int unsigned i = 0; i < size; i++) begin
         if(!dec.peek(symbol)) return;
@@ -114,13 +119,54 @@ function void msgpack_tree::parse(msgpack_node_base root, int unsigned size);
     end
 endfunction
 
-function void msgpack_tree::set_node_info(msgpack_node_base node, msgpack_node_base root);
+function void msgpack_tree::set_node_info(msgpack_node_base node, msgpack_collection_node root);
     node.parent = root;
     root.children.push_back(node);
     if(root.node_type == MSGPACK_NODE_MAP && root.children.size() % 2 == 0) begin
         msgpack_map_node map;
         $cast(map, root);
         map.create_pair_from_children();
+    end
+endfunction
+
+function void msgpack_tree::build_msg();
+    enc = msgpack_enc::type_id::create("enc");
+    parse_tree(_root);
+endfunction
+
+function void msgpack_tree::parse_tree(msgpack_collection_node root);
+    if(root.node_type == MSGPACK_NODE_ARRAY) begin
+        enc.write_array(root.size);
+    end
+    else if(root.node_type == MSGPACK_NODE_MAP) begin
+        enc.write_map(root.size);
+    end
+    foreach(root.children[i]) begin
+        case(root.children[i].node_type) 
+            MSGPACK_NODE_INT: enc.write_int(msgpack_int_node::extract_value(root.children[i]));
+            MSGPACK_NODE_UINT: enc.write_uint(msgpack_uint_node::extract_value(root.children[i]));
+            MSGPACK_NODE_REAL: enc.write_real(msgpack_real_node::extract_value(root.children[i]));
+            MSGPACK_NODE_SHORTREAL: enc.write_shortreal(msgpack_shortreal_node::extract_value(root.children[i]));
+            MSGPACK_NODE_STRING: enc.write_string(msgpack_string_node::extract_value(root.children[i]));
+            MSGPACK_NODE_BOOL: enc.write_bool(msgpack_bool_node::extract_value(root.children[i]));
+            MSGPACK_NODE_ARRAY: begin
+                msgpack_collection_node colleciton_node;
+                if(!$cast(colleciton_node, root.children[i])) begin
+                    `uvm_fatal(get_name(), $sformatf("Can't cast to collection type. Node type is %s", root.node_type.name()))
+                end
+                parse_tree(colleciton_node);
+            end
+            MSGPACK_NODE_MAP: begin
+                msgpack_collection_node colleciton_node;
+                if(!$cast(colleciton_node, root.children[i])) begin
+                    `uvm_fatal(get_name(), $sformatf("Can't cast to collection type. Node type is %s", root.node_type.name()))
+                end
+                parse_tree(colleciton_node);
+            end
+            MSGPACK_NODE_BIN: enc.write_bin(msgpack_bin_node::extract_value(root.children[i]));
+            // MSGPACK_NODE_EXT: // TODO implement ext support
+            default: `uvm_fatal(get_name(), $sformatf("Unexpected type %s", root.children[i].node_type.name()))
+        endcase
     end
 endfunction
 

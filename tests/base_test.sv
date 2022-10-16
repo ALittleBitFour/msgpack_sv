@@ -40,7 +40,7 @@ class base_test extends uvm_test;
         endcase
     endfunction
 
-    function void print_buffer();
+    function void print_buffer(msgpack_enc enc);
         msgpack_buffer buffer = enc.get_buffer();
         string str;
         foreach(buffer[i]) begin
