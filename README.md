@@ -60,8 +60,8 @@ Representation of the resulted message in JSON:
 ## Direct Encode/Decode API
 
 ```verilog
-msgpack_enc encoder;
-msgpack_dec decoder;
+msgpack_enc encoder = new();
+msgpack_dec decoder = new();
 
 encoder.write_map(1);       // we can directly set size of map. 
                             // In this case we don't need to
