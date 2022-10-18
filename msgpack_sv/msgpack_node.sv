@@ -168,6 +168,11 @@ class msgpack_array_node extends msgpack_collection_node;
         end
     endfunction
 
+    function void push(msgpack_node_base child);
+        children.push_back(child);
+        size++;
+    endfunction
+
     `uvm_object_utils(msgpack_array_node)
 endclass
 
@@ -205,8 +210,6 @@ class msgpack_map_node extends msgpack_collection_node;
 
     protected internal_map#(longint) int_map;
     protected internal_map#(longint unsigned) uint_map;
-    protected internal_map#(real) real_map;
-    protected internal_map#(shortreal) shortreal_map;
     protected internal_map#(string) string_map;
     protected internal_map#(bit) bool_map;
     protected internal_map#(msgpack_node_base) array_map;
@@ -216,8 +219,6 @@ class msgpack_map_node extends msgpack_collection_node;
         node_type = MSGPACK_NODE_MAP;
         int_map = new();
         uint_map = new();
-        real_map = new();
-        shortreal_map = new();
         string_map = new();
         bool_map = new();
         array_map = new();
@@ -231,8 +232,6 @@ class msgpack_map_node extends msgpack_collection_node;
         case(key.node_type) inside
             MSGPACK_NODE_INT: int_map.add_key_value(key, value);
             MSGPACK_NODE_UINT: uint_map.add_key_value(key, value);
-            MSGPACK_NODE_REAL: real_map.add_key_value(key, value);
-            MSGPACK_NODE_SHORTREAL: shortreal_map.add_key_value(key, value);
             MSGPACK_NODE_STRING: string_map.add_key_value(key, value);
             MSGPACK_NODE_BOOL: bool_map.add_key_value(key, value);
             [MSGPACK_NODE_ARRAY: MSGPACK_NODE_EXT]: array_map.add_key_value(key, value);
@@ -250,8 +249,6 @@ class msgpack_map_node extends msgpack_collection_node;
         case(key.node_type)
             MSGPACK_NODE_INT: int_map.add_key_value(key, value);
             MSGPACK_NODE_UINT: uint_map.add_key_value(key, value);
-            MSGPACK_NODE_REAL: real_map.add_key_value(key, value);
-            MSGPACK_NODE_REAL: shortreal_map.add_key_value(key, value);
             MSGPACK_NODE_STRING: string_map.add_key_value(key, value);
             MSGPACK_NODE_BOOL: bool_map.add_key_value(key, value);
             MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: array_map.add_key_value(key, value);
@@ -263,8 +260,6 @@ class msgpack_map_node extends msgpack_collection_node;
         case(key.node_type)
             MSGPACK_NODE_INT: return int_map.get_value(key);
             MSGPACK_NODE_UINT: return uint_map.get_value(key);
-            MSGPACK_NODE_REAL: return real_map.get_value(key);
-            MSGPACK_NODE_SHORTREAL: return shortreal_map.get_value(key);
             MSGPACK_NODE_STRING: return string_map.get_value(key);
             MSGPACK_NODE_BOOL: return bool_map.get_value(key);
             MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: return array_map.get_value(key);
@@ -281,10 +276,6 @@ class msgpack_map_node extends msgpack_collection_node;
         foreach(uint_map.map[i]) begin
             printer.print_string("Key", $sformatf("%h", i));
             printer.print_object("Value", uint_map.map[i]);
-        end
-        foreach(real_map.map[i]) begin
-            printer.print_string("Key", $sformatf("%f", i));
-            printer.print_object("Value: ", real_map.map[i]);
         end
         foreach(string_map.map[i]) begin
             printer.print_string("Key", $sformatf("%s", i));

@@ -51,11 +51,11 @@ class tree_parse_test extends base_test;
 
         tree.build_tree(enc.get_buffer());
 
-        if(!$cast(map, tree._root)) `uvm_fatal(get_name(), "First node in tree isn't a map")
+        if(!$cast(map, tree.root)) `uvm_fatal(get_name(), "First node in tree isn't a map")
         map.add_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
         map.add_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
 
-        `uvm_info(get_name(), tree._root.sprint(), UVM_NONE)
+        `uvm_info(get_name(), tree.root.sprint(), UVM_NONE)
     endtask
 
     `uvm_component_utils(tree_parse_test)

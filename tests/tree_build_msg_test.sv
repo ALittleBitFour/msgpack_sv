@@ -23,15 +23,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `define TREE_BUILD_MSG_TEST__SV
 
 class tree_build_msg_test extends base_test;
-    msgpack_tree tree;
-    msgpack_map_node map;
-
     function new(string name = "tree_build_msg_test", uvm_component parent);
         super.new(name, parent);
-        tree = new("tree");
     endfunction
 
     task run_phase(uvm_phase phase);
+        msgpack_tree tree = new();
+        msgpack_map_node map;
+        msgpack_array_node array;
 
         enc.write_map(1);
         enc.write_array(6);
@@ -51,9 +50,14 @@ class tree_build_msg_test extends base_test;
 
         tree.build_tree(enc.get_buffer());
 
-        if(!$cast(map, tree._root)) `uvm_fatal(get_name(), "First node in tree isn't a map")
+        if(!$cast(map, tree.root)) `uvm_fatal(get_name(), "First node in tree isn't a map")
         map.add_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
         map.add_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
+        array = new();
+        array.push(msgpack_bool_node::create_node(1'b1));
+        array.push(msgpack_string_node::create_node("Item"));
+        array.push(msgpack_int_node::create_node(-15));
+        map.add_key_value(msgpack_int_node::create_node(100500), array);
 
         tree.build_msg();
 

@@ -23,7 +23,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `define MSGPACK_TREE__SV
 
 class msgpack_tree extends uvm_object;
-    msgpack_collection_node _root;
+    msgpack_collection_node root;
     protected msgpack_dec dec;
     msgpack_enc enc;
 
@@ -45,12 +45,12 @@ endfunction
 function void msgpack_tree::build_tree(msgpack_buffer buffer);
     dec = msgpack_dec::type_id::create("dec");
     dec.set_buffer(buffer);
-    _root = msgpack_array_node::new("root");
-    parse(_root, -1);
-    if(!$cast(_root, _root.children[0])) begin
+    root = new("root");
+    parse(root, -1);
+    if(!$cast(root, root.children[0])) begin
         `uvm_fatal(get_name(), "First element must be a collection")
     end
-    _root.parent = null;
+    root.parent = null;
 endfunction
 
 function void msgpack_tree::parse(msgpack_collection_node root, int unsigned size);
@@ -152,7 +152,7 @@ endfunction
 
 function void msgpack_tree::build_msg();
     enc = msgpack_enc::type_id::create("enc");
-    parse_tree(_root);
+    parse_tree(root);
 endfunction
 
 function void msgpack_tree::parse_tree(msgpack_collection_node root);
