@@ -22,6 +22,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `ifndef MSGPACK_DEC__SV
 `define MSGPACK_DEC__SV
 
+// Class: msgpack_dec
+// This class provides a set of funcitons for read data from a message
+//
+// Useful links: <msgpack_enc>
 class msgpack_dec extends uvm_object;
     struct {int unsigned offset;} state;
 
@@ -30,19 +34,35 @@ class msgpack_dec extends uvm_object;
 
     extern function new(string name = "msgpack_dec");
 
+    // Function: set_buffer
+    // Set message to decode
     extern function void set_buffer(byte unsigned buffer[$]);
 
+    // Function: read_nil
     extern function void             read_nil();
+    // Function: read_bool
     extern function bit              read_bool();
+    // Function: read_int
     extern function longint          read_int();
+    // Function: read_uint
     extern function longint unsigned read_uint();
+    // Function: read_real
     extern function real             read_real();
+    // Function: read_shortreal
     extern function shortreal        read_shortreal();
+    // Function: read_string
     extern function string           read_string();
+    // Function: read_bin
     extern function msgpack_bin      read_bin();
+    // Function: read_array
+    // Return size of an array
     extern function int unsigned     read_array();
+    // Function: read_map
+    // Return size of a map
     extern function int unsigned     read_map();
 
+    // Function: peer
+    // Peek the next symbol from the message
     extern function bit peek(ref byte unsigned symbol);
     extern protected function byte unsigned    read();
     extern protected function longint unsigned read_and_shift_uint(byte unsigned valid_byte);

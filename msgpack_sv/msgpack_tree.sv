@@ -22,13 +22,28 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `ifndef MSGPACK_TREE__SV
 `define MSGPACK_TREE__SV
 
+/* Class: msgpack_tree
+Tree representation of a message.
+Use different nodes to store and provide an access to the data
+ 
+Can be used to create tree from the message: <build_tree>
+
+Also implements function to convert nodes to message: <build_msg>
+*/
 class msgpack_tree extends uvm_object;
     msgpack_collection_node root;
     protected msgpack_dec dec;
     msgpack_enc enc;
 
     extern function new(string name = "msgpack_node");
+
+    // Function: build_tree
+    // Parse message to create a tree with nodes
+    // Parameters:
+    // buffer - this message will be used to create nodes
     extern function void build_tree(msgpack_buffer buffer);
+    // Function: build_msg
+    // Use root containter and all it's children to build a message
     extern function void build_msg();
 
     extern protected function void parse(msgpack_collection_node root, int unsigned size);

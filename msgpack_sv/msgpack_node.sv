@@ -23,18 +23,24 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `define MSGPACK_NODE__SV
 
 `define msgpack_node_utils(T, Tval) \
+// Function: create_node \
+// Create node with predefined type \
 static function msgpack_node_base create_node(Tval value); \
     T tmp = new(); \
     tmp.value = value; \
     return tmp; \
 endfunction \
 \
+// Function: extract_value \
+// Extract value from the node \
 static function Tval extract_value(msgpack_node_base node); \
     T tmp; \
     if(!$cast(tmp, node)) `uvm_fatal("MsgPack API", "Wrong argument type") \
     return tmp.value; \
 endfunction
 
+// Class: msgpack_node_base
+// Base class for all node types. Contains type of node and pointer to parent node
 class msgpack_node_base extends uvm_object;
     msgpack_node_base parent;
     msgpack_node_t node_type;
@@ -50,6 +56,8 @@ class msgpack_node_base extends uvm_object;
     `uvm_object_utils(msgpack_node_base)
 endclass
 
+// Class: msgpack_node
+// Typed class that contains value. It's not recomended for users
 class msgpack_node#(type T = int) extends msgpack_node_base;
     T value;
 
@@ -69,6 +77,9 @@ class msgpack_node#(type T = int) extends msgpack_node_base;
     `uvm_object_param_utils(msgpack_node#(T))
 endclass
 
+// Class: msgpack_int_node
+// Implements <create_node> and <extract_value> function for 
+// Integer nodes. 
 class msgpack_int_node extends msgpack_node#(longint);
     function new(string name = "msgpack_int_node");
         super.new(name);
@@ -79,6 +90,9 @@ class msgpack_int_node extends msgpack_node#(longint);
     `msgpack_node_utils(msgpack_int_node, longint)
 endclass
 
+// Class: msgpack_uint_node
+// Implements <create_node> and <extract_value> function for 
+// unsigned Integer nodes. 
 class msgpack_uint_node extends msgpack_node#(longint unsigned);
     function new(string name = "msgpack_uint_node");
         super.new(name);
@@ -89,6 +103,9 @@ class msgpack_uint_node extends msgpack_node#(longint unsigned);
     `msgpack_node_utils(msgpack_uint_node, longint unsigned)
 endclass
 
+// Class: msgpack_bool_node
+// Implements <create_node> and <extract_value> function for 
+// Boolean nodes. 
 class msgpack_bool_node extends msgpack_node#(bit);
     function new(string name = "msgpack_bool_node");
         super.new(name);
@@ -99,6 +116,9 @@ class msgpack_bool_node extends msgpack_node#(bit);
     `msgpack_node_utils(msgpack_bool_node, bit)
 endclass
 
+// Class: msgpack_string_node
+// Implements <create_node> and <extract_value> function for 
+// String nodes. 
 class msgpack_string_node extends msgpack_node#(string);
     function new(string name = "msgpack_string_node");
         super.new(name);
@@ -109,6 +129,9 @@ class msgpack_string_node extends msgpack_node#(string);
     `msgpack_node_utils(msgpack_string_node, string)
 endclass
 
+// Class: msgpack_shortreal_node
+// Implements <create_node> and <extract_value> function for 
+// Shortreal nodes. 
 class msgpack_shortreal_node extends msgpack_node#(shortreal);
     function new(string name = "msgpack_shortreal_node");
         super.new(name);
@@ -119,6 +142,9 @@ class msgpack_shortreal_node extends msgpack_node#(shortreal);
     `msgpack_node_utils(msgpack_shortreal_node, shortreal)
 endclass
 
+// Class: msgpack_real_node
+// Implements <create_node> and <extract_value> function for 
+// Real nodes. 
 class msgpack_real_node extends msgpack_node#(real);
     function new(string name = "msgpack_real_node");
         super.new(name);
@@ -129,6 +155,9 @@ class msgpack_real_node extends msgpack_node#(real);
     `msgpack_node_utils(msgpack_real_node, real)
 endclass
 
+// Class: msgpack_bin_node
+// Implements <create_node> and <extract_value> function for 
+// Binary nodes. 
 class msgpack_bin_node extends msgpack_node#(msgpack_bin);
     function new(string name = "msgpack_bin_node");
         super.new(name);
@@ -139,6 +168,9 @@ class msgpack_bin_node extends msgpack_node#(msgpack_bin);
     `msgpack_node_utils(msgpack_bin_node, msgpack_bin)
 endclass
 
+// Class: msgpack_collection_node
+// Base class for collection nodes. Contains size attribute
+// and children queue
 class msgpack_collection_node extends msgpack_node_base;
     int unsigned size;
     msgpack_node_base children[$];
@@ -155,6 +187,8 @@ class msgpack_collection_node extends msgpack_node_base;
     `uvm_object_utils(msgpack_collection_node)
 endclass
 
+// Class: msgpack_array_node
+// Array collection node.
 class msgpack_array_node extends msgpack_collection_node;
     function new(string name = "msgpack_array_node");
         super.new(name);
@@ -168,6 +202,8 @@ class msgpack_array_node extends msgpack_collection_node;
         end
     endfunction
 
+    // Function: push
+    // Push child node to the array
     function void push(msgpack_node_base child);
         children.push_back(child);
         size++;
@@ -176,6 +212,8 @@ class msgpack_array_node extends msgpack_collection_node;
     `uvm_object_utils(msgpack_array_node)
 endclass
 
+// Class: msgpack_map_node
+// Map collection node.
 class msgpack_map_node extends msgpack_collection_node;    
     class internal_map#(type T = int);
         msgpack_node_base map[T];
@@ -224,6 +262,8 @@ class msgpack_map_node extends msgpack_collection_node;
         array_map = new();
     endfunction
 
+    // Function: add_key_value
+    // Add pair key, value to the map
     function void add_key_value(msgpack_node_base key, msgpack_node_base value);
         key.parent = this;
         value.parent = key;
@@ -256,6 +296,7 @@ class msgpack_map_node extends msgpack_collection_node;
         endcase
     endfunction;
 
+    // Function: get_value
     function msgpack_node_base get_value(msgpack_node_base key);
         case(key.node_type)
             MSGPACK_NODE_INT: return int_map.get_value(key);

@@ -23,6 +23,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `define MSGPACK_ENC__SV
 
 // Class: msgpack_enc
+// This class provides a set of funcitons for writing data to a message
+//
+// Useful links: <msgpack_dec>
 class msgpack_enc extends uvm_object;
     `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     protected msgpack_buffer buffer[$];
@@ -34,23 +37,67 @@ class msgpack_enc extends uvm_object;
 
     extern function new(string name = "msgpack_enc");
 
+    // Function: get_buffer
+    // Return resulted message
     extern function msgpack_buffer get_buffer();
 
+    // Function: write_nil
+    // Write nil value to the message.
     extern function void write_nil();
+    // Function: write_bool
+    // Write boolean value to the message.
     extern function void write_bool(bit value);
+    // Function: write_int
+    // Write integer value to the message.
+    // A value of an Integer object is limited from -(2^63) upto (2^64)-1
     extern function void write_int(longint value);
+    // Function: write_uint
+    // Write integer value to the message.
+    // A value of an unsigned Integer object is limited from 0 upto (2^64)-1
     extern function void write_uint(longint unsigned value);
+    // Function: write_real
+    // Write real value to the message.
+    // The real data type is the same as a C double(IEEE 754)
     extern function void write_real(real value);
+    // Function: write_shortreal
+    // Write shortreal value to the message.
+    // The shortreal data type is the same as a C float *Not recomended*
     extern function void write_shortreal(shortreal value);
+    // Function: write_string
+    // Write string value to the message.
+    // Maximum byte size of a String object is (2^32)-1
     extern function void write_string(string value);
+    // Function: write_bin
+    // Write binary value to the message.
+    // Maximum length of a Binary object is (2^32)-1
     extern function void write_bin(byte unsigned value[]);
+    // Function: write_array
+    // Write array to the message.
+    // Maximum number of elements of an Array object is (2^32)-1
+    //
+    // Parameters:
+    // size - set number of elements, that will be added to this array
     extern function void write_array(int unsigned size);
+    // Function: write_map
+    // Write map to the message.
+    // Maximum number of elements of an Map object is (2^32)-1
+    //
+    // Parameters:
+    // size - set number of pairs(key,value), that will be added to this map
     extern function void write_map(int unsigned size);
     
     `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    // Function: write_array_begin
+    // Create an array and write all data to the array untill <write_array_end> will be called
     extern function void write_array_begin();
+    // Function: write_array_end
+    // Finish the array
     extern function void write_array_end();
+    // Function: write_map_begin
+    // Create a map and write all data to the map untill <write_map_end> will be called
     extern function void write_map_begin();
+    // Function: write_map_end
+    // Finish the map
     extern function void write_map_end();
     `endif
 
