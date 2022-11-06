@@ -19,7 +19,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-`ifdef MSGPACK_UVM_SUPPORT
+`ifndef MSGPACK_UVM_NOT_SUPPORTED
 class msgpack_base extends uvm_object;
     `uvm_object_utils(msgpack_base)
 
@@ -49,7 +49,7 @@ endclass
 `endif
 
 function void log_error(string name, string error_msg);
-`ifdef MSGPACK_UVM_SUPPORT
+`ifndef MSGPACK_UVM_NOT_SUPPORTED
     `uvm_error(name, error_msg)
 `else
     $display("%t: %s: ERROR %s", $time(), name, error_msg);
@@ -57,7 +57,7 @@ function void log_error(string name, string error_msg);
 endfunction
 
 function void log_fatal(string name, string fatal_msg);
-`ifdef MSGPACK_UVM_SUPPORT
+`ifndef MSGPACK_UVM_NOT_SUPPORTED
     `uvm_fatal(name, fatal_msg)
 `else
     $display("%t: %s: FATAL ERROR %s", $time(), name, fatal_msg);
@@ -66,7 +66,7 @@ function void log_fatal(string name, string fatal_msg);
 endfunction
 
 function void log(string name, string msg);
-`ifdef MSGPACK_UVM_SUPPORT
+`ifndef MSGPACK_UVM_NOT_SUPPORTED
     `uvm_info(name, msg, UVM_DEBUG)
 `else
     $display("%t: %s: %s", $time(), name, msg);

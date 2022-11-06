@@ -58,7 +58,7 @@ function msgpack_tree::new(string name = "msgpack_node");
 endfunction
 
 function void msgpack_tree::build_tree(msgpack_buffer buffer);
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     dec = msgpack_dec::type_id::create("dec");
     `else
     dec = new("dec");
@@ -170,7 +170,7 @@ function void msgpack_tree::set_node_info(msgpack_node_base node, msgpack_collec
 endfunction
 
 function void msgpack_tree::build_msg();
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     enc = msgpack_enc::type_id::create("enc");
     `else
     enc = new("enc");

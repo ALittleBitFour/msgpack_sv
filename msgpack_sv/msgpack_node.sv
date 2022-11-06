@@ -49,7 +49,7 @@ class msgpack_node_base extends msgpack_base;
         super.new(name);
     endfunction
 
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     virtual function void do_print(uvm_printer printer);
         printer.print_string("type", node_type.name());
     endfunction
@@ -71,7 +71,7 @@ class msgpack_node#(type T = int) extends msgpack_node_base;
         super.new(name);
     endfunction
 
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         printer.print_string("value", $sformatf("%0p", value));
@@ -188,7 +188,7 @@ class msgpack_collection_node extends msgpack_node_base;
         super.new(name);
     endfunction
 
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         printer.print_string("size", $sformatf("%0p", size));
@@ -211,7 +211,7 @@ class msgpack_array_node extends msgpack_collection_node;
         node_type = MSGPACK_NODE_ARRAY;
     endfunction
 
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         foreach(children[i]) begin
@@ -237,40 +237,40 @@ class msgpack_array_node extends msgpack_collection_node;
     `msgpack_uvm_object_utils(msgpack_array_node)
 endclass
 
+class internal_map#(type T = int);
+    msgpack_node_base map[T];
+
+    function new();
+    endfunction
+
+    function void add_key_value(msgpack_node_base key, msgpack_node_base value);
+        msgpack_node#(T) tmp;
+        if(key.node_type inside {MSGPACK_NODE_ARRAY, MSGPACK_NODE_MAP, MSGPACK_NODE_BIN, MSGPACK_NODE_EXT}) begin
+            map[key] = value;
+        end
+        else if($cast(tmp, key)) begin
+           map[tmp.value] = value;
+        end
+        else begin
+            log_fatal("MsgPack API", $sformatf("Can't cast key in map node. Expected type: %s", key.node_type.name()));
+        end
+    endfunction
+
+    function msgpack_node_base get_value(msgpack_node_base key);
+        msgpack_node#(T) tmp;
+        if(key.node_type inside {MSGPACK_NODE_ARRAY, MSGPACK_NODE_MAP, MSGPACK_NODE_BIN, MSGPACK_NODE_EXT}) begin
+            return map[key];
+        end
+        if(!$cast(tmp, key)) begin
+            log_fatal("MsgPack API", "Can't cast key in map node");
+        end
+        return map[tmp.value];
+    endfunction
+endclass
+
 // Class: msgpack_map_node
 // Map collection node.
 class msgpack_map_node extends msgpack_collection_node;    
-    class internal_map#(type T = int);
-        msgpack_node_base map[T];
-
-        function new();
-        endfunction
-
-        function void add_key_value(msgpack_node_base key, msgpack_node_base value);
-            msgpack_node#(T) tmp;
-            if(key.node_type inside {MSGPACK_NODE_ARRAY, MSGPACK_NODE_MAP, MSGPACK_NODE_BIN, MSGPACK_NODE_EXT}) begin
-                map[key] = value;
-            end
-            else if($cast(tmp, key)) begin
-               map[tmp.value] = value;
-            end
-            else begin
-                log_fatal("MsgPack API", $sformatf("Can't cast key in map node. Expected type: %s", key.node_type.name()));
-            end
-        endfunction
-
-        function msgpack_node_base get_value(msgpack_node_base key);
-            msgpack_node#(T) tmp;
-            if(key.node_type inside {MSGPACK_NODE_ARRAY, MSGPACK_NODE_MAP, MSGPACK_NODE_BIN, MSGPACK_NODE_EXT}) begin
-                return map[key];
-            end
-            if(!$cast(tmp, key)) begin
-                log_fatal("MsgPack API", "Can't cast key in map node");
-            end
-            return map[tmp.value];
-        endfunction
-    endclass
-
     protected internal_map#(longint) int_map;
     protected internal_map#(longint unsigned) uint_map;
     protected internal_map#(string) string_map;
@@ -333,7 +333,7 @@ class msgpack_map_node extends msgpack_collection_node;
         endcase
     endfunction
 
-    `ifdef MSGPACK_UVM_SUPPORT
+    `ifndef MSGPACK_UVM_NOT_SUPPORTED
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         foreach(int_map.map[i]) begin
