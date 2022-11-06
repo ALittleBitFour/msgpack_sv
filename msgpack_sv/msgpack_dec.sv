@@ -36,7 +36,7 @@ class msgpack_dec extends uvm_object;
 
     // Function: set_buffer
     // Set message to decode
-    extern function void set_buffer(byte unsigned buffer[$]);
+    extern function void set_buffer(msgpack_buffer buffer);
 
     // Function: read_nil
     extern function void             read_nil();
