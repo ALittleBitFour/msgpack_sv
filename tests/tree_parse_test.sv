@@ -55,7 +55,11 @@ class tree_parse_test extends base_test;
         map.add_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
         map.add_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
 
+        `ifdef MSGPACK_UVM_SUPPORT
         `uvm_info(get_name(), tree.root.sprint(), UVM_NONE)
+        `else
+        `uvm_info(get_name(), tree.root.convert2string(), UVM_NONE)
+        `endif
     endtask
 
     `uvm_component_utils(tree_parse_test)

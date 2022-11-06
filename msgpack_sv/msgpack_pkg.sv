@@ -22,10 +22,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `ifndef MSGPACK_PKG__SV
 `define MSGPACK_PKG__SV
 
+`ifdef MSGPACK_UVM_SUPPORT
 `include "uvm_pkg.sv"
+`endif
 
 package msgpack_pkg;
+    `ifdef MSGPACK_UVM_SUPPORT
     import uvm_pkg::*;
+    `endif
     `include "msgpack_types.sv"
     `include "msgpack_enc.sv"
     `include "msgpack_dec.sv"

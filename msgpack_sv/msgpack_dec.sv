@@ -26,7 +26,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // This class provides a set of funcitons for read data from a message
 //
 // Useful links: <msgpack_enc>
-class msgpack_dec extends uvm_object;
+class msgpack_dec extends msgpack_base;
     struct {int unsigned offset;} state;
 
     msgpack_result_t last_result;
@@ -68,7 +68,7 @@ class msgpack_dec extends uvm_object;
     extern protected function longint unsigned read_and_shift_uint(byte unsigned valid_byte);
     extern protected function longint          read_and_shift_int(byte unsigned valid_byte);
 
-    `uvm_object_utils(msgpack_dec)
+    `msgpack_uvm_object_utils(msgpack_dec)
 endclass
 
 function msgpack_dec::new(string name = "msgpack_dec");
@@ -90,7 +90,7 @@ function byte unsigned msgpack_dec::read();
     `ifndef MSGPACK_SKIP_CHECK_BUFFER_SIZE
     if(state.offset >= buffer.size()) begin
         last_result = MSGPACK_OOB;
-        `uvm_error(get_name(), $sformatf("MsgPack decoding error. Type: %s", last_result.name()))
+        log_error(get_name(),$sformatf("MsgPack decoding error. Type: %s", last_result.name()));
     end
     `endif
     read = buffer[state.offset];
@@ -105,7 +105,7 @@ function longint unsigned msgpack_dec::read_and_shift_uint(input byte unsigned v
         `ifndef MSGPACK_SKIP_CHECK_BUFFER_SIZE
         if(state.offset >= buffer.size()) begin
             last_result = MSGPACK_OOB;
-            `uvm_error(get_name(), $sformatf("MsgPack decoding error. Type: %s", last_result.name()))
+            log_error(get_name(),$sformatf("MsgPack decoding error. Type: %s", last_result.name()));
         end
         `endif
         read_and_shift_uint = {read_and_shift_uint, buffer[state.offset]};
@@ -120,7 +120,7 @@ function longint msgpack_dec::read_and_shift_int(input byte unsigned valid_byte)
         `ifndef MSGPACK_SKIP_CHECK_BUFFER_SIZE
         if(state.offset >= buffer.size()) begin
             last_result = MSGPACK_OOB;
-            `uvm_error(get_name(), $sformatf("MsgPack decoding error. Type: %s", last_result.name()))
+            log_error(get_name(),$sformatf("MsgPack decoding error. Type: %s", last_result.name()));
         end
         `endif
         if(i == 0) begin

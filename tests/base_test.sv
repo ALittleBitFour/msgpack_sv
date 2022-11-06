@@ -43,8 +43,8 @@ class base_test extends uvm_test;
     endfunction
 
     function void build_phase(uvm_phase phase);
-        enc = msgpack_enc::type_id::create("enc");
-        dec = msgpack_dec::type_id::create("dec");
+        enc = new("enc");
+        dec = new("dec");
     endfunction
 
     function void check_result(msgpack_result_t result);

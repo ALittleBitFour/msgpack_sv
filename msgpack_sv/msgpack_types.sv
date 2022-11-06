@@ -19,6 +19,60 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+`ifdef MSGPACK_UVM_SUPPORT
+class msgpack_base extends uvm_object;
+    `uvm_object_utils(msgpack_base)
+
+    function new(string name = "msgpack_base");
+        super.new(name);
+    endfunction
+endclass
+
+`define msgpack_uvm_object_utils(type_name) `uvm_object_utils(type_name)
+`define msgpack_uvm_object_param_utils(type_name) `uvm_object_param_utils(type_name)
+
+`else
+ class msgpack_base;
+    protected string name;
+
+    function new(string name);
+        this.name = name;
+    endfunction
+
+    function string get_name();
+        return name;
+    endfunction
+ endclass
+
+`define msgpack_uvm_object_utils(type_name) //dummy_macro
+`define msgpack_uvm_object_param_utils(type_name) //dummy_macro
+`endif
+
+function void log_error(string name, string error_msg);
+`ifdef MSGPACK_UVM_SUPPORT
+    `uvm_error(name, error_msg)
+`else
+    $display("%t: %s: ERROR %s", $time(), name, error_msg);
+`endif
+endfunction
+
+function void log_fatal(string name, string fatal_msg);
+`ifdef MSGPACK_UVM_SUPPORT
+    `uvm_fatal(name, fatal_msg)
+`else
+    $display("%t: %s: FATAL ERROR %s", $time(), name, fatal_msg);
+    $finish();
+`endif
+endfunction
+
+function void log(string name, string msg);
+`ifdef MSGPACK_UVM_SUPPORT
+    `uvm_info(name, msg, UVM_DEBUG)
+`else
+    $display("%t: %s: %s", $time(), name, msg);
+`endif
+endfunction
+
 typedef enum byte unsigned {
     MSGPACK_POSITIVE_FIXINT = 8'h00,
     MSGPACK_FIXMAP          = 8'h80,

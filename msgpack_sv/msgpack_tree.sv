@@ -30,7 +30,7 @@ Can be used to create tree from the message: <build_tree>
 
 Also implements function to convert nodes to message: <build_msg>
 */
-class msgpack_tree extends uvm_object;
+class msgpack_tree extends msgpack_base;
     msgpack_collection_node root;
     protected msgpack_dec dec;
     msgpack_enc enc;
@@ -50,7 +50,7 @@ class msgpack_tree extends uvm_object;
     extern protected function void parse_tree(msgpack_collection_node root);
     extern protected function void set_node_info(msgpack_node_base node, msgpack_collection_node root);
 
-    `uvm_object_utils(msgpack_tree)
+    `msgpack_uvm_object_utils(msgpack_tree)
 endclass
 
 function msgpack_tree::new(string name = "msgpack_node");
@@ -58,12 +58,16 @@ function msgpack_tree::new(string name = "msgpack_node");
 endfunction
 
 function void msgpack_tree::build_tree(msgpack_buffer buffer);
+    `ifdef MSGPACK_UVM_SUPPORT
     dec = msgpack_dec::type_id::create("dec");
+    `else
+    dec = new("dec");
+    `endif
     dec.set_buffer(buffer);
     root = new("root");
     parse(root, -1);
     if(!$cast(root, root.children[0])) begin
-        `uvm_fatal(get_name(), "First element must be a collection")
+        log_fatal(get_name(), "First element must be a collection");
     end
     root.parent = null;
 endfunction
@@ -149,7 +153,7 @@ function void msgpack_tree::parse(msgpack_collection_node root, int unsigned siz
                     set_node_info(node, root);
                     parse(node, node.size*2);
                 end
-                default: `uvm_error(get_name(), $sformatf("Wrong Message pack type: %h", symbol))
+                default: log_error(get_name(),$sformatf("Wrong Message pack type: %h", symbol));
             endcase
         end
     end
@@ -166,7 +170,11 @@ function void msgpack_tree::set_node_info(msgpack_node_base node, msgpack_collec
 endfunction
 
 function void msgpack_tree::build_msg();
+    `ifdef MSGPACK_UVM_SUPPORT
     enc = msgpack_enc::type_id::create("enc");
+    `else
+    enc = new("enc");
+    `endif
     parse_tree(root);
 endfunction
 
@@ -188,20 +196,20 @@ function void msgpack_tree::parse_tree(msgpack_collection_node root);
             MSGPACK_NODE_ARRAY: begin
                 msgpack_collection_node colleciton_node;
                 if(!$cast(colleciton_node, root.children[i])) begin
-                    `uvm_fatal(get_name(), $sformatf("Can't cast to collection type. Node type is %s", root.node_type.name()))
+                    log_fatal(get_name(), $sformatf("Can't cast to collection type. Node type is %s", root.node_type.name()));
                 end
                 parse_tree(colleciton_node);
             end
             MSGPACK_NODE_MAP: begin
                 msgpack_collection_node colleciton_node;
                 if(!$cast(colleciton_node, root.children[i])) begin
-                    `uvm_fatal(get_name(), $sformatf("Can't cast to collection type. Node type is %s", root.node_type.name()))
+                    log_fatal(get_name(), $sformatf("Can't cast to collection type. Node type is %s", root.node_type.name()));
                 end
                 parse_tree(colleciton_node);
             end
             MSGPACK_NODE_BIN: enc.write_bin(msgpack_bin_node::extract_value(root.children[i]));
             // MSGPACK_NODE_EXT: // TODO implement ext support
-            default: `uvm_fatal(get_name(), $sformatf("Unexpected type %s", root.children[i].node_type.name()))
+            default: log_fatal(get_name(), $sformatf("Unexpected type %s", root.children[i].node_type.name()));
         endcase
     end
 endfunction

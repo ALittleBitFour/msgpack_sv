@@ -26,7 +26,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // This class provides a set of funcitons for writing data to a message
 //
 // Useful links: <msgpack_dec>
-class msgpack_enc extends uvm_object;
+class msgpack_enc extends msgpack_base;
     `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
     protected msgpack_buffer buffer[$];
     protected msgpack_uint32 current_buffer;
@@ -110,7 +110,7 @@ class msgpack_enc extends uvm_object;
     extern protected function void write_collection_end(bit is_map);
     `endif
 
-    `uvm_object_utils(msgpack_enc)
+    `msgpack_uvm_object_utils(msgpack_enc)
 endclass
 
 function msgpack_enc::new(string name = "msgpack_enc");
@@ -241,7 +241,7 @@ function void msgpack_enc::write_string(string value);
         write_and_shift(str_size, 4);
     end
     else begin
-        `uvm_fatal(get_name(), "Realy?! String is bigger than (2^32)-1 bytes")
+        log_fatal(get_name(), "Realy?! String is bigger than (2^32)-1 bytes");
         return;
     end
     foreach(value[i]) begin
@@ -264,7 +264,7 @@ function void msgpack_enc::write_bin(byte unsigned value[]);
         write_and_shift(bin_size, 4);
     end
     else begin
-        `uvm_fatal(get_name(), "Binary data is bigger than (2^32)-1 bytes")
+        log_fatal(get_name(), "Binary data is bigger than (2^32)-1 bytes");
         return;
     end
     foreach(value[i]) begin
@@ -288,7 +288,7 @@ function void msgpack_enc::write_collection(int unsigned size, bit is_map);
         write_and_shift(size, 4);
     end
     else begin
-        `uvm_fatal(get_name(), "Array is bigger than (2^32)-1 bytes")
+        log_fatal(get_name(), "Array is bigger than (2^32)-1 bytes");
         return;
     end
 endfunction

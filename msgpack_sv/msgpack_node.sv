@@ -35,13 +35,13 @@ endfunction \
 // Extract value from the node \
 static function Tval extract_value(msgpack_node_base node); \
     T tmp; \
-    if(!$cast(tmp, node)) `uvm_fatal("MsgPack API", "Wrong argument type") \
+    if(!$cast(tmp, node)) log_fatal("MsgPack API", "Wrong argument type"); \
     return tmp.value; \
 endfunction
 
 // Class: msgpack_node_base
 // Base class for all node types. Contains type of node and pointer to parent node
-class msgpack_node_base extends uvm_object;
+class msgpack_node_base extends msgpack_base;
     msgpack_node_base parent;
     msgpack_node_t node_type;
 
@@ -49,11 +49,17 @@ class msgpack_node_base extends uvm_object;
         super.new(name);
     endfunction
 
+    `ifdef MSGPACK_UVM_SUPPORT
     virtual function void do_print(uvm_printer printer);
         printer.print_string("type", node_type.name());
     endfunction
+    `endif
+    
+    virtual function string convert2string();
+        return {"Type: ", node_type.name(), "\n"};
+    endfunction
 
-    `uvm_object_utils(msgpack_node_base)
+    `msgpack_uvm_object_utils(msgpack_node_base)
 endclass
 
 // Class: msgpack_node
@@ -65,16 +71,19 @@ class msgpack_node#(type T = int) extends msgpack_node_base;
         super.new(name);
     endfunction
 
+    `ifdef MSGPACK_UVM_SUPPORT
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         printer.print_string("value", $sformatf("%0p", value));
     endfunction
+    `endif
 
-    function string convert2string();
-        return $sformatf("%p", value);
+    virtual function string convert2string();
+        convert2string = super.convert2string();
+        return {convert2string, $sformatf("Value: %p\n", value)};
     endfunction
 
-    `uvm_object_param_utils(msgpack_node#(T))
+    `msgpack_uvm_object_param_utils(msgpack_node#(T))
 endclass
 
 // Class: msgpack_int_node
@@ -86,7 +95,7 @@ class msgpack_int_node extends msgpack_node#(longint);
         node_type = MSGPACK_NODE_INT;
     endfunction
 
-    `uvm_object_param_utils(msgpack_int_node)
+    `msgpack_uvm_object_param_utils(msgpack_int_node)
     `msgpack_node_utils(msgpack_int_node, longint)
 endclass
 
@@ -99,7 +108,7 @@ class msgpack_uint_node extends msgpack_node#(longint unsigned);
         node_type = MSGPACK_NODE_UINT;
     endfunction
 
-    `uvm_object_param_utils(msgpack_uint_node)
+    `msgpack_uvm_object_param_utils(msgpack_uint_node)
     `msgpack_node_utils(msgpack_uint_node, longint unsigned)
 endclass
 
@@ -112,7 +121,7 @@ class msgpack_bool_node extends msgpack_node#(bit);
         node_type = MSGPACK_NODE_BOOL;
     endfunction
 
-    `uvm_object_param_utils(msgpack_bool_node)
+    `msgpack_uvm_object_param_utils(msgpack_bool_node)
     `msgpack_node_utils(msgpack_bool_node, bit)
 endclass
 
@@ -125,7 +134,7 @@ class msgpack_string_node extends msgpack_node#(string);
         node_type = MSGPACK_NODE_STRING;
     endfunction
 
-    `uvm_object_param_utils(msgpack_string_node)
+    `msgpack_uvm_object_param_utils(msgpack_string_node)
     `msgpack_node_utils(msgpack_string_node, string)
 endclass
 
@@ -138,7 +147,7 @@ class msgpack_shortreal_node extends msgpack_node#(shortreal);
         node_type = MSGPACK_NODE_SHORTREAL;
     endfunction
 
-    `uvm_object_param_utils(msgpack_shortreal_node)
+    `msgpack_uvm_object_param_utils(msgpack_shortreal_node)
     `msgpack_node_utils(msgpack_shortreal_node, shortreal)
 endclass
 
@@ -151,7 +160,7 @@ class msgpack_real_node extends msgpack_node#(real);
         node_type = MSGPACK_NODE_REAL;
     endfunction
 
-    `uvm_object_param_utils(msgpack_real_node)
+    `msgpack_uvm_object_param_utils(msgpack_real_node)
     `msgpack_node_utils(msgpack_real_node, real)
 endclass
 
@@ -164,7 +173,7 @@ class msgpack_bin_node extends msgpack_node#(msgpack_bin);
         node_type = MSGPACK_NODE_BIN;
     endfunction
 
-    `uvm_object_param_utils(msgpack_bin_node)
+    `msgpack_uvm_object_param_utils(msgpack_bin_node)
     `msgpack_node_utils(msgpack_bin_node, msgpack_bin)
 endclass
 
@@ -179,12 +188,19 @@ class msgpack_collection_node extends msgpack_node_base;
         super.new(name);
     endfunction
 
+    `ifdef MSGPACK_UVM_SUPPORT
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         printer.print_string("size", $sformatf("%0p", size));
     endfunction
+    `endif
 
-    `uvm_object_utils(msgpack_collection_node)
+    virtual function string convert2string();
+        convert2string = super.convert2string();
+        return {convert2string, "Size: ", $sformatf("%0p", size), "\n"};
+    endfunction
+
+    `msgpack_uvm_object_utils(msgpack_collection_node)
 endclass
 
 // Class: msgpack_array_node
@@ -195,10 +211,19 @@ class msgpack_array_node extends msgpack_collection_node;
         node_type = MSGPACK_NODE_ARRAY;
     endfunction
 
+    `ifdef MSGPACK_UVM_SUPPORT
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         foreach(children[i]) begin
             printer.print_object($sformatf("child_%0d", i), children[i]);
+        end
+    endfunction
+    `endif
+
+    virtual function string convert2string();
+        convert2string = super.convert2string();
+        foreach(children[i]) begin
+            convert2string = {convert2string, $sformatf("child_%0d:\n", i), children[i].convert2string(), "\n"};
         end
     endfunction
 
@@ -209,7 +234,7 @@ class msgpack_array_node extends msgpack_collection_node;
         size++;
     endfunction
 
-    `uvm_object_utils(msgpack_array_node)
+    `msgpack_uvm_object_utils(msgpack_array_node)
 endclass
 
 // Class: msgpack_map_node
@@ -230,7 +255,7 @@ class msgpack_map_node extends msgpack_collection_node;
                map[tmp.value] = value;
             end
             else begin
-                `uvm_fatal("MsgPack API", $sformatf("Can't cast key in map node. Expected type: %s", key.node_type.name()))
+                log_fatal("MsgPack API", $sformatf("Can't cast key in map node. Expected type: %s", key.node_type.name()));
             end
         endfunction
 
@@ -240,7 +265,7 @@ class msgpack_map_node extends msgpack_collection_node;
                 return map[key];
             end
             if(!$cast(tmp, key)) begin
-                `uvm_fatal("MsgPack API", "Can't cast key in map node")
+                log_fatal("MsgPack API", "Can't cast key in map node");
             end
             return map[tmp.value];
         endfunction
@@ -275,7 +300,7 @@ class msgpack_map_node extends msgpack_collection_node;
             MSGPACK_NODE_STRING: string_map.add_key_value(key, value);
             MSGPACK_NODE_BOOL: bool_map.add_key_value(key, value);
             [MSGPACK_NODE_ARRAY: MSGPACK_NODE_EXT]: array_map.add_key_value(key, value);
-            default: `uvm_fatal(get_name(), "Unexpected node type")
+            default: log_fatal(get_name(), "Unexpected node type");
         endcase
         size++;
     endfunction
@@ -292,7 +317,7 @@ class msgpack_map_node extends msgpack_collection_node;
             MSGPACK_NODE_STRING: string_map.add_key_value(key, value);
             MSGPACK_NODE_BOOL: bool_map.add_key_value(key, value);
             MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: array_map.add_key_value(key, value);
-            default: `uvm_fatal(get_name(), "Unexpected node type")
+            default: log_fatal(get_name(), "Unexpected node type");
         endcase
     endfunction;
 
@@ -304,10 +329,11 @@ class msgpack_map_node extends msgpack_collection_node;
             MSGPACK_NODE_STRING: return string_map.get_value(key);
             MSGPACK_NODE_BOOL: return bool_map.get_value(key);
             MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: return array_map.get_value(key);
-            default: `uvm_fatal(get_name(), "Unexpected node type")
+            default: log_fatal(get_name(), "Unexpected node type");
         endcase
     endfunction
 
+    `ifdef MSGPACK_UVM_SUPPORT
     function void do_print (uvm_printer printer);
         super.do_print(printer);
         foreach(int_map.map[i]) begin
@@ -331,8 +357,33 @@ class msgpack_map_node extends msgpack_collection_node;
             printer.print_object("Value", array_map.map[i]);
         end
     endfunction
+    `endif
 
-    `uvm_object_utils(msgpack_map_node)
+    virtual function string convert2string();
+        convert2string = super.convert2string();
+        foreach(int_map.map[i]) begin
+            convert2string = {convert2string, "Map key: ", $sformatf("%h", i), "\n"};
+            convert2string = {convert2string, "Map value:\n", int_map.map[i].convert2string(), "\n"};
+        end
+        foreach(uint_map.map[i]) begin
+            convert2string = {convert2string, "Map key: ", $sformatf("%h", i), "\n"};
+            convert2string = {convert2string, "Map value:\n", uint_map.map[i].convert2string(), "\n"};
+        end
+        foreach(string_map.map[i]) begin
+            convert2string = {convert2string, "Map key: ", $sformatf("%s", i), "\n"};
+            convert2string = {convert2string, "Map value:\n", string_map.map[i].convert2string(), "\n"};
+        end
+        foreach(bool_map.map[i]) begin
+            convert2string = {convert2string, "Map key: ", $sformatf("%d", i), "\n"};
+            convert2string = {convert2string, "Map value:\n", bool_map.map[i].convert2string(), "\n"};
+        end
+        foreach(array_map.map[i]) begin
+            convert2string = {convert2string, "Map key: ", array_map.map[i].parent.convert2string()};
+            convert2string = {convert2string, "Map value:\n", array_map.map[i].convert2string(), "\n"};
+        end
+    endfunction
+
+    `msgpack_uvm_object_utils(msgpack_map_node)
 endclass
 
 `undef msgpack_node_utils
