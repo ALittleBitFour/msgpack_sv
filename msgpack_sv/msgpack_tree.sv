@@ -77,31 +77,31 @@ function void msgpack_tree::parse(msgpack_collection_node root, int unsigned siz
     for(int unsigned i = 0; i < size; i++) begin
         if(!dec.peek(symbol)) return;
         // Check fixed types
-        if(symbol >> 7 == 0) begin
+        if(symbol >> 7 == 0 || symbol inside {[MSGPACK_UINT8: MSGPACK_UINT64]}) begin
             msgpack_uint_node node = new("uint_node");
             node.value = dec.read_uint();
             set_node_info(node, root);
         end
-        else if(symbol >> 5 == 'h7) begin
+        else if(symbol >> 5 == 'h7 || symbol inside {[MSGPACK_INT8: MSGPACK_INT64]}) begin
             msgpack_int_node node = new("int_node");
-            node.value = dec.read_uint();
+            node.value = dec.read_int();
             set_node_info(node, root);
         end
-        else if(symbol >> 5 == 'h5) begin
+        else if(symbol >> 5 == 'h5 || symbol inside {[MSGPACK_STR8: MSGPACK_STR32]}) begin
             msgpack_string_node node = new("str_node");
             node.value = dec.read_string();
             set_node_info(node, root);
         end
-        else if(symbol >> 4 == 'h9) begin
+        else if(symbol >> 4 == 'h9 || symbol inside {[MSGPACK_ARRAY16: MSGPACK_ARRAY32]}) begin
             msgpack_array_node node = new("array_node");
-            node.size = dec.read_array();
-            parse(node, node.size);
+            node._size = dec.read_array();
+            parse(node, node._size);
             set_node_info(node, root);
         end
-        else if(symbol >> 4 == 'h8) begin
+        else if(symbol >> 4 == 'h8 || symbol inside {[MSGPACK_MAP16: MSGPACK_MAP32]}) begin
             msgpack_map_node node = new("map_node");
-            node.size = dec.read_map();
-            parse(node, node.size*2);
+            node._size = dec.read_map();
+            parse(node, node._size*2);
             set_node_info(node, root);
         end
         else begin
@@ -109,16 +109,6 @@ function void msgpack_tree::parse(msgpack_collection_node root, int unsigned siz
                 MSGPACK_FALSE, MSGPACK_TRUE: begin
                     msgpack_bool_node node = new("bool_node");
                     node.value = dec.read_bool();
-                    set_node_info(node, root);
-                end
-                [MSGPACK_UINT8: MSGPACK_UINT64]: begin
-                    msgpack_uint_node node = new("uint_node");
-                    node.value = dec.read_uint();
-                    set_node_info(node, root);
-                end
-                [MSGPACK_INT8: MSGPACK_INT64]: begin
-                    msgpack_int_node node = new("int_node");
-                    node.value = dec.read_int();
                     set_node_info(node, root);
                 end
                 MSGPACK_FLOAT32: begin
@@ -135,23 +125,6 @@ function void msgpack_tree::parse(msgpack_collection_node root, int unsigned siz
                     msgpack_bin_node node = new("bin_node");
                     node.value = dec.read_bin();
                     set_node_info(node, root);
-                end
-                [MSGPACK_STR8: MSGPACK_STR32]: begin
-                    msgpack_string_node node = new("str_node");
-                    node.value = dec.read_string();
-                    set_node_info(node, root);
-                end
-                [MSGPACK_ARRAY16: MSGPACK_ARRAY32]: begin
-                    msgpack_array_node node = new("array_node");
-                    node.size = dec.read_array();
-                    set_node_info(node, root);
-                    parse(node, node.size);
-                end
-                [MSGPACK_MAP16: MSGPACK_MAP32]: begin
-                    msgpack_map_node node = new("map_node");
-                    node.size = dec.read_map();
-                    set_node_info(node, root);
-                    parse(node, node.size*2);
                 end
                 default: log_error(get_name(),$sformatf("Wrong Message pack type: %h", symbol));
             endcase
@@ -180,10 +153,10 @@ endfunction
 
 function void msgpack_tree::parse_tree(msgpack_collection_node root);
     if(root.node_type == MSGPACK_NODE_ARRAY) begin
-        enc.write_array(root.size);
+        enc.write_array(root.size());
     end
     else if(root.node_type == MSGPACK_NODE_MAP) begin
-        enc.write_map(root.size);
+        enc.write_map(root.size());
     end
     foreach(root.children[i]) begin
         case(root.children[i].node_type) 

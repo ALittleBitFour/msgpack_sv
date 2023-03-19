@@ -29,12 +29,18 @@ class direct_set_test extends base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
+        repeat(100_000) begin
+            longint value = {$urandom(), $urandom()};
+            enc.write_int(value);
+            dec.set_buffer(enc.get_buffer());
+            `check_decoding(longint, dec.read_int, value, %0d);
+            enc.clean();
+        end
+
         enc.write_map(1);
         enc.write_array(6);
         enc.write_bool(1'b1);
         enc.write_bool(1'b0);
-        enc.write_int(-100);
-        enc.write_int(52);
         enc.write_real(-1.14);
         enc.write_shortreal(-1.15);
         enc.write_map(2);
@@ -51,8 +57,6 @@ class direct_set_test extends base_test;
         `check_decoding(msgpack_uint32, dec.read_array, 6, %0d);
         `check_decoding(bit, dec.read_bool, 1'b1, %0d);
         `check_decoding(bit, dec.read_bool, 1'b0, %0d);
-        `check_decoding(longint, dec.read_int, -100, %0d);
-        `check_decoding(longint, dec.read_int, 52, %0d);
         `check_decoding(real, dec.read_real, -1.14, %f);
         `check_decoding(shortreal, dec.read_shortreal, -1.15, %f); // It seems that Questa use real instead of shortreal, so we have an error if use $shortrealtobits
         `check_decoding(msgpack_uint32, dec.read_map, 2, %0d);

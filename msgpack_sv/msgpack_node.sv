@@ -22,7 +22,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `ifndef MSGPACK_NODE__SV
 `define MSGPACK_NODE__SV
 
-`define msgpack_node_utils(T, Tval) \
+typedef msgpack_int_node;
+typedef msgpack_uint_node;
+typedef msgpack_bool_node;
+
+`define msgpack_node_create(T, Tval) \
 // Function: create_node \
 // Create node with predefined type \
 static function msgpack_node_base create_node(Tval value); \
@@ -30,13 +34,40 @@ static function msgpack_node_base create_node(Tval value); \
     tmp.value = value; \
     return tmp; \
 endfunction \
-\
+
+`define msgpack_node_utils(T, Tval) \
+`msgpack_node_create(T, Tval) \
 // Function: extract_value \
 // Extract value from the node \
 static function Tval extract_value(msgpack_node_base node); \
     T tmp; \
     if(!$cast(tmp, node)) log_fatal("MsgPack API", "Wrong argument type"); \
     return tmp.value; \
+endfunction
+
+`define msgpack_int_node_utils(T, Tval) \
+`msgpack_node_create(T, Tval) \
+// Function: extract_value \
+// Special extract value function from nodes that can be casted to integer \
+static function Tval extract_value(msgpack_node_base node); \
+    case(node.node_type) \
+        MSGPACK_NODE_INT: begin \
+            msgpack_int_node tmp; \
+            if(!$cast(tmp, node)) log_fatal("MsgPack API", "Wrong argument type"); \
+            return tmp.value; \
+        end \
+        MSGPACK_NODE_UINT: begin \
+            msgpack_uint_node tmp; \
+            if(!$cast(tmp, node)) log_fatal("MsgPack API", "Wrong argument type"); \
+            return tmp.value; \
+        end \
+        MSGPACK_NODE_BOOL: begin \
+            msgpack_bool_node tmp; \
+            if(!$cast(tmp, node)) log_fatal("MsgPack API", "Wrong argument type"); \
+            return tmp.value; \
+        end \
+        default: log_fatal("MsgPack API", "Wrong node type"); \
+    endcase \
 endfunction
 
 // Class: msgpack_node_base
@@ -96,7 +127,7 @@ class msgpack_int_node extends msgpack_node#(longint);
     endfunction
 
     `msgpack_uvm_object_param_utils(msgpack_int_node)
-    `msgpack_node_utils(msgpack_int_node, longint)
+    `msgpack_int_node_utils(msgpack_int_node, longint)
 endclass
 
 // Class: msgpack_uint_node
@@ -109,7 +140,7 @@ class msgpack_uint_node extends msgpack_node#(longint unsigned);
     endfunction
 
     `msgpack_uvm_object_param_utils(msgpack_uint_node)
-    `msgpack_node_utils(msgpack_uint_node, longint unsigned)
+    `msgpack_int_node_utils(msgpack_uint_node, longint unsigned)
 endclass
 
 // Class: msgpack_bool_node
@@ -122,7 +153,7 @@ class msgpack_bool_node extends msgpack_node#(bit);
     endfunction
 
     `msgpack_uvm_object_param_utils(msgpack_bool_node)
-    `msgpack_node_utils(msgpack_bool_node, bit)
+    `msgpack_int_node_utils(msgpack_bool_node, bit)
 endclass
 
 // Class: msgpack_string_node
@@ -181,7 +212,7 @@ endclass
 // Base class for collection nodes. Contains size attribute
 // and children queue
 class msgpack_collection_node extends msgpack_node_base;
-    int unsigned size;
+    int unsigned _size;
     msgpack_node_base children[$];
 
     function new(string name = "msgpack_collection_node");
@@ -191,13 +222,19 @@ class msgpack_collection_node extends msgpack_node_base;
     `ifndef MSGPACK_UVM_NOT_SUPPORTED
     function void do_print (uvm_printer printer);
         super.do_print(printer);
-        printer.print_string("size", $sformatf("%0p", size));
+        printer.print_string("size", $sformatf("%0p", _size));
     endfunction
     `endif
 
     virtual function string convert2string();
         convert2string = super.convert2string();
-        return {convert2string, "Size: ", $sformatf("%0p", size), "\n"};
+        return {convert2string, "Size: ", $sformatf("%0p", _size), "\n"};
+    endfunction
+
+    // Function: size
+    // Return size of an array
+    function int size();
+        return _size;
     endfunction
 
     `msgpack_uvm_object_utils(msgpack_collection_node)
@@ -231,7 +268,17 @@ class msgpack_array_node extends msgpack_collection_node;
     // Push child node to the array
     function void push(msgpack_node_base child);
         children.push_back(child);
-        size++;
+        _size++;
+    endfunction
+
+    // Function: get
+    // Return element of an array according to the index. Return null if there is no such element
+    function msgpack_node_base get(int index);
+        if(index < children.size()) begin
+            return children[index];
+        end else begin
+            return null;
+        end
     endfunction
 
     `msgpack_uvm_object_utils(msgpack_array_node)
@@ -302,7 +349,7 @@ class msgpack_map_node extends msgpack_collection_node;
             [MSGPACK_NODE_ARRAY: MSGPACK_NODE_EXT]: array_map.add_key_value(key, value);
             default: log_fatal(get_name(), "Unexpected node type");
         endcase
-        size++;
+        _size++;
     endfunction
 
     function void create_pair_from_children();
@@ -331,6 +378,12 @@ class msgpack_map_node extends msgpack_collection_node;
             MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: return array_map.get_value(key);
             default: log_fatal(get_name(), "Unexpected node type");
         endcase
+    endfunction
+
+    // Function: get_value_of_string
+    // JSON uses only strings as keys in maps, string keys can be the most popular option
+    function msgpack_node_base get_value_of_string(string key);
+        return string_map.map[key];
     endfunction
 
     `ifndef MSGPACK_UVM_NOT_SUPPORTED

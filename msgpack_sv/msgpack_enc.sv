@@ -40,7 +40,9 @@ class msgpack_enc extends msgpack_base;
     // Function: get_buffer
     // Return resulted message
     extern function msgpack_buffer get_buffer();
-
+    // Funciton: clean
+    // Remove all data from the buffer
+    extern function void clean();
     // Function: write_nil
     // Write nil value to the message.
     extern function void write_nil();
@@ -127,6 +129,14 @@ function msgpack_buffer msgpack_enc::get_buffer();
     return buffer[0];
     `else
     return buffer;
+    `endif
+endfunction
+
+function void msgpack_enc::clean();
+    buffer.delete();
+    `ifndef MSGPACK_DISABLE_DYN_ARRAY_SIZE_CALC
+    current_buffer = 0;
+    current_elem_size.delete();
     `endif
 endfunction
 

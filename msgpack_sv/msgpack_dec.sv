@@ -78,6 +78,7 @@ endfunction
 
 function void msgpack_dec::set_buffer(byte unsigned buffer[$]);
     this.buffer = buffer;
+    state.offset = 0;
 endfunction
 
 function bit msgpack_dec::peek(ref byte unsigned symbol);
@@ -195,9 +196,11 @@ function longint msgpack_dec::read_int();
     if(last_result inside {MSGPACK_OOB, MSGPACK_OK}) begin
         return longint'(uint_value);
     end
-    else if((uint_value & 8'he0) == 8'he0) begin 
+    else if((uint_value & 8'he0) == 8'he0) begin
+        byte unsigned tmp;
         last_result = MSGPACK_OK;
-        return longint'(uint_value);
+        tmp = ~(uint_value & 8'hff);
+        return 0 - (tmp + 1);
     end
     else if(uint_value == MSGPACK_INT8) begin
         return read_and_shift_int(1);

@@ -2,14 +2,17 @@ import msgpack
 import json
 import argparse
 from functools import singledispatch
+from io import BytesIO, TextIOWrapper
 
 parser = argparse.ArgumentParser(description='Convert MessagePack to JSON')
 parser.add_argument('--from_json', action='store_true',
-                    help='sum the integers (default: find the max)')
+                    help='Convert from JSON to MessagePack')
 parser.add_argument('--msg', type=str,
-                    help='an integer for the accumulator')
-parser.add_argument('--file', type=str,
-                    help='an integer for the accumulator')
+                    help='Use data from the command line argument')
+parser.add_argument('--input', type=str,
+                    help='Use data from a file')
+parser.add_argument('--output', type=str,
+                    help='Write result to a file')
 
 args = parser.parse_args()
 
@@ -25,18 +28,35 @@ def _handle_dict(ob: dict):
 def _handle_list(ob: list):
     return [keys_to_strings(v) for v in ob]           
 
-if args.msg != None:
-    print('\n')
-    if args.from_json:
-        print(msgpack.dumps(json.loads(args.msg)).hex())
+buf = BytesIO()
+if args.msg == None:
+    f = open(args.input, mode="rb")
+    buf.write(f.read())
+    buf.seek(0)
+
+output = TextIOWrapper
+if args.output != None:
+    output_mode = "wb" if args.from_json == True else "w"
+    output = open(args.output, mode=output_mode)
+
+if args.from_json:
+    msg = msgpack.dumps(json.loads(buf.read() if args.msg == None else args.msg))
+    if args.output:
+        output.write(msg)
     else:
-        bytes_array = bytes.fromhex(args.msg)
-        print(json.dumps(keys_to_strings(msgpack.loads(bytes_array, use_list=False, strict_map_key=False))))
+        print(msg)
 else:
-    print('\n')
-    f = open(args.file)
-    if args.from_json:
-        print(msgpack.dumps(json.load(f)).hex())
+    json_string = ""
+    if args.msg:
+        bytes_array = bytes.fromhex(args.msg)
+        json_string = (json.dumps(keys_to_strings(msgpack.loads(bytes_array, use_list=False, strict_map_key=False))))
     else:
-        bytes_array = bytes.fromhex(f.read())
-        print(json.dumps(keys_to_strings(msgpack.loads(bytes_array, use_list=False, strict_map_key=False))))
+        unpacker = msgpack.Unpacker(buf, raw=True, use_list=False, strict_map_key=False)
+        message = []
+        for unpacked in unpacker:
+            message.append(unpacked)
+        json_string = (json.dumps(keys_to_strings(message)))
+    if args.output:
+        output.write(json_string)
+    else:
+        print(json_string)
