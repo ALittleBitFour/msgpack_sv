@@ -20,7 +20,7 @@ One of the most important drawback of MessagePack is the unreadable format, hove
 
 ## Node API
 
-```verilog
+```systemverilog
 msgpack_tree tree = new();
 msgpack_map_node map = new();
 msgpack_array_node array = new();
@@ -59,7 +59,7 @@ Representation of the resulted message in JSON:
 
 ## Direct Encode/Decode API
 
-```verilog
+```systemverilog
 msgpack_enc encoder = new();
 msgpack_dec decoder = new();
 
