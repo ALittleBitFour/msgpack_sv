@@ -76,7 +76,7 @@ function msgpack_dec::new(string name = "msgpack_dec");
     state.offset = 0;
 endfunction
 
-function void msgpack_dec::set_buffer(byte unsigned buffer[$]);
+function void msgpack_dec::set_buffer(msgpack_buffer buffer);
     this.buffer = buffer;
     state.offset = 0;
 endfunction

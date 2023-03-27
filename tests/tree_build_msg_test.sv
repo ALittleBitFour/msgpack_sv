@@ -51,13 +51,14 @@ class tree_build_msg_test extends base_test;
         tree.build_tree(enc.get_buffer());
 
         if(!$cast(map, tree.root)) `uvm_fatal(get_name(), "First node in tree isn't a map")
-        map.add_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
-        map.add_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
+        map.set_key_value(msgpack_string_node::create_node("New entry"), msgpack_int_node::create_node(15));
+        map.set_key_value(msgpack_string_node::create_node("New-new entry"), msgpack_string_node::create_node("Here we go again"));
+        map.set_value_of_string("Last string", msgpack_uint_node::create_node(50000));
         array = new();
         array.push(msgpack_bool_node::create_node(1'b1));
         array.push(msgpack_string_node::create_node("Item"));
         array.push(msgpack_int_node::create_node(-15));
-        map.add_key_value(msgpack_int_node::create_node(100500), array);
+        map.set_key_value(msgpack_int_node::create_node(100500), array);
 
         tree.build_msg();
 

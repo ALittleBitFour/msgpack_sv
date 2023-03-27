@@ -23,6 +23,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 `define TESTS_PKG__SV
 
 `include "uvm_pkg.sv"
+
 package tests_pkg;
     import uvm_pkg::*;
     import msgpack_pkg::*;

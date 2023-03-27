@@ -290,13 +290,35 @@ class internal_map#(type T = int);
     function new();
     endfunction
 
-    function void add_key_value(msgpack_node_base key, msgpack_node_base value);
+    function void set_key_value(msgpack_node_base key, msgpack_node_base value);
+        msgpack_node#(T) tmp;
+        if($cast(tmp, key)) begin
+           map[tmp.value] = value;
+        end
+        else begin
+            log_fatal("MsgPack API", $sformatf("Can't cast key in map node. Expected type: %s", key.node_type.name()));
+        end
+    endfunction
+
+    function msgpack_node_base get_value(msgpack_node_base key);
+        msgpack_node#(T) tmp;
+        if(!$cast(tmp, key)) begin
+            log_fatal("MsgPack API", "Can't cast key in map node");
+        end
+        return map[tmp.value];
+    endfunction
+endclass
+
+class internal_node_map#(type T = int);
+    msgpack_node_base map[T];
+
+    function new();
+    endfunction
+
+    function void set_key_value(msgpack_node_base key, msgpack_node_base value);
         msgpack_node#(T) tmp;
         if(key.node_type inside {MSGPACK_NODE_ARRAY, MSGPACK_NODE_MAP, MSGPACK_NODE_BIN, MSGPACK_NODE_EXT}) begin
             map[key] = value;
-        end
-        else if($cast(tmp, key)) begin
-           map[tmp.value] = value;
         end
         else begin
             log_fatal("MsgPack API", $sformatf("Can't cast key in map node. Expected type: %s", key.node_type.name()));
@@ -307,9 +329,6 @@ class internal_map#(type T = int);
         msgpack_node#(T) tmp;
         if(key.node_type inside {MSGPACK_NODE_ARRAY, MSGPACK_NODE_MAP, MSGPACK_NODE_BIN, MSGPACK_NODE_EXT}) begin
             return map[key];
-        end
-        if(!$cast(tmp, key)) begin
-            log_fatal("MsgPack API", "Can't cast key in map node");
         end
         return map[tmp.value];
     endfunction
@@ -322,7 +341,7 @@ class msgpack_map_node extends msgpack_collection_node;
     protected internal_map#(longint unsigned) uint_map;
     protected internal_map#(string) string_map;
     protected internal_map#(bit) bool_map;
-    protected internal_map#(msgpack_node_base) array_map;
+    protected internal_node_map#(msgpack_node_base) array_map;
 
     function new(string name = "msgpack_map_node");
         super.new(name);
@@ -334,19 +353,19 @@ class msgpack_map_node extends msgpack_collection_node;
         array_map = new();
     endfunction
 
-    // Function: add_key_value
+    // Function: set_key_value
     // Add pair key, value to the map
-    function void add_key_value(msgpack_node_base key, msgpack_node_base value);
+    function void set_key_value(msgpack_node_base key, msgpack_node_base value);
         key.parent = this;
         value.parent = key;
         children.push_back(key);
         children.push_back(value);
         case(key.node_type) inside
-            MSGPACK_NODE_INT: int_map.add_key_value(key, value);
-            MSGPACK_NODE_UINT: uint_map.add_key_value(key, value);
-            MSGPACK_NODE_STRING: string_map.add_key_value(key, value);
-            MSGPACK_NODE_BOOL: bool_map.add_key_value(key, value);
-            [MSGPACK_NODE_ARRAY: MSGPACK_NODE_EXT]: array_map.add_key_value(key, value);
+            MSGPACK_NODE_INT: int_map.set_key_value(key, value);
+            MSGPACK_NODE_UINT: uint_map.set_key_value(key, value);
+            MSGPACK_NODE_STRING: string_map.set_key_value(key, value);
+            MSGPACK_NODE_BOOL: bool_map.set_key_value(key, value);
+            [MSGPACK_NODE_ARRAY: MSGPACK_NODE_EXT]: array_map.set_key_value(key, value);
             default: log_fatal(get_name(), "Unexpected node type");
         endcase
         _size++;
@@ -359,14 +378,14 @@ class msgpack_map_node extends msgpack_collection_node;
         key.parent = this;
         value.parent = key;
         case(key.node_type)
-            MSGPACK_NODE_INT: int_map.add_key_value(key, value);
-            MSGPACK_NODE_UINT: uint_map.add_key_value(key, value);
-            MSGPACK_NODE_STRING: string_map.add_key_value(key, value);
-            MSGPACK_NODE_BOOL: bool_map.add_key_value(key, value);
-            MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: array_map.add_key_value(key, value);
+            MSGPACK_NODE_INT: int_map.set_key_value(key, value);
+            MSGPACK_NODE_UINT: uint_map.set_key_value(key, value);
+            MSGPACK_NODE_STRING: string_map.set_key_value(key, value);
+            MSGPACK_NODE_BOOL: bool_map.set_key_value(key, value);
+            MSGPACK_NODE_ARRAY : MSGPACK_NODE_EXT: array_map.set_key_value(key, value);
             default: log_fatal(get_name(), "Unexpected node type");
         endcase
-    endfunction;
+    endfunction
 
     // Function: get_value
     function msgpack_node_base get_value(msgpack_node_base key);
@@ -381,9 +400,22 @@ class msgpack_map_node extends msgpack_collection_node;
     endfunction
 
     // Function: get_value_of_string
+    // Fast way to get value via string key
     // JSON uses only strings as keys in maps, string keys can be the most popular option
     function msgpack_node_base get_value_of_string(string key);
         return string_map.map[key];
+    endfunction
+
+    // Function: set_value_of_string
+    // Fast way to use string key and node value
+    function void set_value_of_string(string key_string, msgpack_node_base value);
+        msgpack_node_base key = msgpack_string_node::create_node(key_string);
+        key.parent = this;
+        value.parent = key;
+        children.push_back(key);
+        children.push_back(value);
+        string_map.set_key_value(key, value);
+        _size++;
     endfunction
 
     `ifndef MSGPACK_UVM_NOT_SUPPORTED

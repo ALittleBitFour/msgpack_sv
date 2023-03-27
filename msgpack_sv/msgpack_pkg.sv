@@ -69,16 +69,16 @@ msgpack_map_node map = new();
 msgpack_array_node array = new();
 
 // Add data to map node
-map.add_key_value(msgpack_string_node::create_node("New entry"), 
+map.set_key_value(msgpack_string_node::create_node("New entry"), 
                   msgpack_int_node::create_node(15));
-map.add_key_value(msgpack_string_node::create_node("New-new entry"), 
+map.set_key_value(msgpack_string_node::create_node("New-new entry"), 
                   msgpack_string_node::create_node("Here we go again"));
 
 // Push some data to array
 array.push(msgpack_bool_node::create_node(1'b1));
 array.push(msgpack_string_node::create_node("Item"));
 array.push(msgpack_int_node::create_node(-15));
-map.add_key_value(msgpack_int_node::create_node(100500), array);
+map.set_key_value(msgpack_int_node::create_node(100500), array);
 
 // Build message
 tree.root = map;

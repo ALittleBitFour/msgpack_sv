@@ -29,7 +29,7 @@ class direct_set_test extends base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        repeat(100_000) begin
+        repeat(1_000_000) begin
             longint value = {$urandom(), $urandom()};
             enc.write_int(value);
             dec.set_buffer(enc.get_buffer());
